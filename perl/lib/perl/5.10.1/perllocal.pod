@@ -1,0 +1,22 @@
+=head2 Wed Mar 16 12:53:37 2011: C<Module> L<AI::FANN|AI::FANN>
+
+=over 4
+
+=item *
+
+C<installed into: /mnt/project/reprof/perl/share/perl/5.10.1>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.10>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
