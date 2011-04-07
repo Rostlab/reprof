@@ -51,7 +51,7 @@ GetOptions(
 			'debug'		    => \$debug
 			);
 
-unless ($train_dir && $valid_dir && $test_dir) {
+if ($train_dir && $valid_dir && $test_dir) {
     say "\nDESCRIPTION:";
     say "trains the reprof neural network with the given datasets";
 
@@ -87,15 +87,15 @@ unless ($train_dir && $valid_dir && $test_dir) {
 #-------------------------------------------------- 
 print "Parsing trainset(s)... ";
 my $train_set = Reprof::Tools::Set->new($train_dir, $window_size);
-print "".($train_set->size)." dps\n";
+say "".($train_set->size)." dps";
 
 print "Parsing validset(s)... ";
 my $valid_set = Reprof::Tools::Set->new($valid_dir, $window_size);
-print "".($valid_set->size)." dps\n";
+say "".($valid_set->size)." dps";
 
 print "Parsing testset(s)... ";
 my $test_set = Reprof::Tools::Set->new($test_dir, $window_size);
-print "".($test_set->size)." dps\n";
+say "".($test_set->size)." dps";
 
 #--------------------------------------------------
 # Helper variables
