@@ -22,8 +22,8 @@ my $train_dir;
 my $valid_dir;
 my $test_dir;
 
-my $window_size = 5;
-my $num_hiddens = 50;
+my $window_size = 19;
+my $num_hiddens = 75;
 
 my $max_epochs = 1000;
 my $learn_rate = 0.01;
@@ -51,7 +51,7 @@ GetOptions(
 			'debug'		    => \$debug
 			);
 
-if ($train_dir && $valid_dir && $test_dir) {
+unless ($train_dir && $valid_dir && $test_dir) {
     say "\nDESCRIPTION:";
     say "trains the reprof neural network with the given datasets";
 
