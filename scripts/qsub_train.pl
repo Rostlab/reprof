@@ -2,22 +2,23 @@
 use strict;
 use feature qw(say);
 
-my $window_min = 9;
+my $window_min = 15;
 my $window_max = 31;
 my $window_step = 2;
 
-my $hidden_min = 30;
-my $hidden_max = 200;
-my $hidden_step = 10;
+my $hidden_min = 5;
+my $hidden_max = 100;
+my $hidden_step = 5;
 
 my $set_min = 1;
-my $set_max = 1;
+my $set_max = 3;
+
 my $type = "seqlayer";
 
 my $lrate = 0.01;
 my $lmoment = 0.1;
 
-my $precise = 0;
+my $precise = 1;
 
 my $base = "/mnt/project/reprof/";
 my $bin = $base . "scripts/train_reprof.pl";
@@ -28,7 +29,7 @@ my $results = $base . "data/results/";
 my $nets = $base . "data/nets/";
 
 
-my $qsub_file_head = "#!/bin/sh\n"."export PERL5LIB=/mnt/project/reprof/perl/lib/perl/5.10.1";
+my $qsub_file_head = "#!/bin/sh\n"."export PERL5LIB=/mnt/project/reprof/lib/perl";
 
 my $count = 0;
 foreach my $set ($set_min .. $set_max) { 

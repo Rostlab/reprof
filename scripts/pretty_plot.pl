@@ -21,9 +21,12 @@ my @cols;
 
 my @col_tmp;
 my $params = "w lines";
+my $outfile;
 
 my %opts = (xlabel => "epoch",
             ylabel => "Q3",
+            term => "png",
+            output => "./out.png",
             title   => "Q3 on train-, valid-, testsets" );
 
 #--------------------------------------------------
@@ -48,7 +51,7 @@ foreach my $arg (@ARGV) {
 	}
 }
 
-my $script = "set term x11;";
+my $script = "";
 
 while (my ($k, $v) = each %opts) {
     $script .= "set $k \"$v\";";

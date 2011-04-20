@@ -85,8 +85,6 @@ sub add {
 	my $obs = $self->_list_max_position($observed);
 	my $pred = $self->_list_max_position($predicted);
 
-        #say "$obs $pred";
-
         $self->[1][$obs][$pred]++;
 }
 

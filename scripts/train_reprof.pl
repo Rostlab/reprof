@@ -47,8 +47,8 @@ GetOptions(
 			'lrate=s'   	=> \$learn_rate,
 			'lmoment=s'  	=> \$learn_moment,
 			'precise=i' 	=> \$precise,
-			'epochs=i'	    => \$max_epochs,
-			'debug'		    => \$debug
+			'epochs=i'      => \$max_epochs,
+			'debug'	        => \$debug
 			);
 
 unless ($train_dir && $valid_dir && $test_dir) {
@@ -147,9 +147,9 @@ foreach my $epoch (1 .. $max_epochs) {
     print "Epoch $epoch: training\n";
     train_nn($ann, $train_set);
 
-	#--------------------------------------------------
-	# Testing 
-	#-------------------------------------------------- 
+    #--------------------------------------------------
+    # Testing 
+    #-------------------------------------------------- 
     # trainset
     print "Epoch $epoch: benchmark trainset... ";
     my $train_measure = test_nn($ann, $train_set);
@@ -219,12 +219,12 @@ sub train_nn {
 #-------------------------------------------------- 
 sub test_nn {
     my ($nn, $set) = @_;
-	my $measure = Reprof::Tools::Measure->new($num_outputs);
+    my $measure = Reprof::Tools::Measure->new($num_outputs);
 
     while (my $dp = $set->next_dp) {
         my $result = $nn->run($dp->[0]);
         $measure->add($dp->[1], $result);
-	}
+    }
 
     return $measure;
 }
