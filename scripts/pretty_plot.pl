@@ -33,28 +33,33 @@ my %opts = (xlabel => "epoch",
 # Gather files, columns and opts
 #-------------------------------------------------- 
 foreach my $arg (@ARGV) {
-	if (-e $arg) {
-		push @files, $arg;
-	}
+    if (-e $arg) {
+            push @files, $arg;
+    }
     elsif ($arg =~ /^-/) {
         my $sstr = substr $arg, 1;
         my ($k, $v) = split /=/, $sstr;
         
         $opts{$k} = $v;
     }
-	else {
-		push @col_tmp, $arg;
-		if (scalar @col_tmp == 2) {
-			push @cols, [@col_tmp];
-			@col_tmp = ();
-		}
-	}
+    else {
+        push @col_tmp, $arg;
+        if (scalar @col_tmp == 2) {
+                push @cols, [@col_tmp];
+                @col_tmp = ();
+        }
+    }
 }
 
 my $script = "";
 
 while (my ($k, $v) = each %opts) {
-    $script .= "set $k \"$v\";";
+    if ($v) {
+        $script .= "set $k \"$v\";";
+    }
+    else {
+        $script .= "set $k;";
+    }
 }
 
 $script .= "plot ";

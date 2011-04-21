@@ -8,16 +8,17 @@ use List::Util qw(shuffle);
 sub new {
     my ($class, $dir, $win) = @_;
     my $self = bless {  _dir            => $dir,
-                        _data           => [],
-                        _iter_original  => [],
-                        _iter_current   => [],
-                        _num_features   => undef,
-                        _num_out        => undef,
-                        _size           => undef,
-                        _win            => $win,
-                        _win_half       => ($win - 1) / 2 
-                    }, $class;
-    
+        _data           => [],
+        _iter_original  => [],
+        _iter_current   => [],
+        _num_desc       => undef,
+        _num_features   => undef,
+        _num_out        => undef,
+        _size           => undef,
+        _win            => $win,
+        _win_half       => ($win - 1) / 2 
+    }, $class;
+
     $self->_parse_sets_from_dir;
 
     return $self;
@@ -45,10 +46,17 @@ sub reset_iter {
     push @{$self->{_iter_current}}, (shuffle @{$self->{_iter_original}});
 }
 
+sub reset_iter_original {
+    my $self = shift;
+
+    $self->{_iter_current} = [];
+    push @{$self->{_iter_current}}, @{$self->{_iter_original}};
+}
+
 
 sub next_dp {
     my ($self) = @_;
-    
+
     my $current = shift @{$self->{_iter_current}};
     unless (defined $current) {
         $self->reset_iter;
@@ -61,20 +69,23 @@ sub next_dp {
     my $win_end = $center + $self->{_win_half};
     my $seq_length = scalar @{$self->{_data}->[$prot]};
 
+    my @tmp_desc;
     my @tmp_in;
     my @tmp_out;
-    push @tmp_out, @{$self->{_data}->[$prot][$center][1]};
+
+    push @tmp_out, @{$self->{_data}->[$prot][$center][2]};
+    push @tmp_desc, @{$self->{_data}->[$prot][$center][0]};
 
     foreach my $pointer ($win_start .. $win_end) {
         if ($pointer < 0 || $pointer >= $seq_length) {
             push @tmp_in, $self->_empty_array($self->{_num_features} - 1), 1;
         }
         else {
-            push @tmp_in, @{$self->{_data}->[$prot][$pointer][0]}, 0;
+            push @tmp_in, @{$self->{_data}->[$prot][$pointer][1]}, 0;
         }
     }
 
-	return [\@tmp_in, \@tmp_out];
+    return [\@tmp_desc, \@tmp_in, \@tmp_out];
 }
 
 sub _parse_sets_from_dir {
@@ -97,15 +108,20 @@ sub _parse_sets_from_dir {
         my $hd = shift @in;
         warn "No header specified in $file\n" if !defined $hd;
         my @header = split /\t/, $hd;
-        my ($dump, $num_skip, $num_in, $num_out) = @header;
+        my ($dump, $num_desc, $num_in, $num_out) = @header;
 
         $self->{_num_features} = $num_in + 1;
         $self->{_num_out} = $num_out;
 
         my $pointer = -1;
-        my $in_start = 1 + $num_skip;
-        my $out_start = $in_start + $num_in;
-        my $in_end = $out_start - 1;
+
+        my $desc_start = 1;
+        my $desc_end = $desc_start + $num_desc - 1;
+
+        my $in_start = $desc_end + 1;
+        my $in_end = $in_start + $num_in - 1;
+
+        my $out_start = $in_end + 1;
         my $out_end = $out_start + $num_out - 1;
 
         foreach my $dp (@in) {
@@ -116,10 +132,14 @@ sub _parse_sets_from_dir {
                 }
                 elsif ($dp =~ /^DP/) {
                     my @split = split /\t/, $dp;
-                    
+
+                    my @descs;
                     my @ins;
                     my @outs;
 
+                    foreach ($desc_start .. $desc_end) {
+                        push @descs, $split[$_];
+                    }
                     foreach ($in_start .. $in_end) {
                         push @ins, $split[$_];
                     }
@@ -127,7 +147,7 @@ sub _parse_sets_from_dir {
                         push @outs, $split[$_];
                     }
 
-                    push @{$result[$pointer]}, [\@ins, \@outs];		
+                    push @{$result[$pointer]}, [\@descs, \@ins, \@outs];		
                 }
             }
         }
@@ -147,14 +167,14 @@ sub _parse_sets_from_dir {
 }
 
 sub _empty_array {
-	my ($self, $size) = @_;
+    my ($self, $size) = @_;
 
-	my @array;
-	foreach (1..$size) {
-		push @array, 0;
-	}
+    my @array;
+    foreach (1..$size) {
+        push @array, 0;
+    }
 
-	return @array;
+    return @array;
 }
 
 1;

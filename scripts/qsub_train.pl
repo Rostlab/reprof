@@ -14,11 +14,10 @@ my $set_min = 1;
 my $set_max = 3;
 
 my $type = "seqlayer";
+#my $type = "struclayer";
 
 my $lrate = 0.01;
 my $lmoment = 0.1;
-
-my $precise = 1;
 
 my $base = "/mnt/project/reprof/";
 my $bin = $base . "scripts/train_reprof.pl";
@@ -35,7 +34,7 @@ my $count = 0;
 foreach my $set ($set_min .. $set_max) { 
     for (my $window = $window_min; $window <= $window_max; $window += $window_step) {
         for (my $hidden = $hidden_min; $hidden <= $hidden_max; $hidden += $hidden_step) {
-            my $base_filename = "t$type.s$set.w$window.h$hidden.lr$lrate.lm$lmoment.p$precise";
+            my $base_filename = "t$type.s$set.w$window.h$hidden.lr$lrate.lm$lmoment";
 
             my $jobname = $base_filename;
             $jobname =~ s/\./_/g;
@@ -52,7 +51,6 @@ foreach my $set ($set_min .. $set_max) {
                     '-data'    	, "$results/$base_filename.result",
                     '-window'  	, $window,
                     '-hidden'  	, $hidden,
-                    '-precise'  , $precise,
                     '-lrate'   	, $lrate,
                     '-lmoment'  , $lmoment );
 

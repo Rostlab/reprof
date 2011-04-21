@@ -22,13 +22,12 @@ my $train_dir;
 my $valid_dir;
 my $test_dir;
 
-my $window_size = 19;
-my $num_hiddens = 75;
+my $window_size = 17;
+my $num_hiddens = 50;
 
 my $max_epochs = 1000;
 my $learn_rate = 0.01;
 my $learn_moment = 0.1;
-my $precise = 1;
 
 my $max_decreasing_epochs = 20;
 
@@ -46,7 +45,6 @@ GetOptions(
 			'hidden=i'  	=> \$num_hiddens,
 			'lrate=s'   	=> \$learn_rate,
 			'lmoment=s'  	=> \$learn_moment,
-			'precise=i' 	=> \$precise,
 			'epochs=i'      => \$max_epochs,
 			'debug'	        => \$debug
 			);
@@ -74,8 +72,6 @@ unless ($train_dir && $valid_dir && $test_dir) {
     say "\tlearning rate";
     say "-lmoment";
     say "\tlearning momentum";
-    say "-precise";
-    say "\treset MSE after every protein instead of every fold";
     say "-epochs";
     say "\tmaximum number of epochs";
 
@@ -203,11 +199,10 @@ close RESULT;
 #-------------------------------------------------- 
 sub train_nn {
     my ($nn, $set) = @_;
-    
-    $nn->reset_MSE;
+
     while (my $dp = $set->next_dp) {
-        $nn->reset_MSE if $precise;
-        $nn->train($dp->[0], $dp->[1]);
+        $nn->reset_MSE;
+        $nn->train($dp->[1], $dp->[2]);
     }
 }
 
@@ -222,13 +217,13 @@ sub test_nn {
     my $measure = Reprof::Tools::Measure->new($num_outputs);
 
     while (my $dp = $set->next_dp) {
-        my $result = $nn->run($dp->[0]);
-        $measure->add($dp->[1], $result);
+        $nn->reset_MSE;
+        my $result = $nn->run($dp->[1]);
+        $measure->add($dp->[2], $result);
     }
 
     return $measure;
 }
-
 
 #--------------------------------------------------
 # name:        empty_array
