@@ -7,23 +7,23 @@ my $window_max = 31;
 my $window_step = 2;
 
 my $hidden_min = 5;
-my $hidden_max = 100;
+my $hidden_max = 150;
 my $hidden_step = 5;
 
 my $set_min = 1;
 my $set_max = 3;
 
-my $type = "seqlayer";
-#my $type = "struclayer";
+#my $type = "seqlayer";
+my $type = "struclayer";
 
 my $lrate = 0.01;
 my $lmoment = 0.1;
 
 my $base = "/mnt/project/reprof/";
 my $bin = $base . "scripts/train_reprof.pl";
-my $train = $base . "data/sets_$type/train/";
-my $valid = $base . "data/sets_$type/valid/";
-my $test = $base . "data/sets_$type/test/";
+my $train = $base . "data/sets/$type/train/";
+my $valid = $base . "data/sets/$type/valid/";
+my $test = $base . "data/sets/$type/test/";
 my $results = $base . "data/results/";
 my $nets = $base . "data/nets/";
 
@@ -47,7 +47,7 @@ foreach my $set ($set_min .. $set_max) {
                     '-train'   	, "$train/$set/",
                     '-valid'   	, "$valid/$set/",
                     '-test'    	, "$test/$set/",
-                    '-net'	   	, "$nets/$base_filename.net",
+                    '-net'	, "$nets/$base_filename.net",
                     '-data'    	, "$results/$base_filename.result",
                     '-window'  	, $window,
                     '-hidden'  	, $hidden,
