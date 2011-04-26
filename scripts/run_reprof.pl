@@ -3,13 +3,17 @@ use strict;
 use feature qw(say);
 use Getopt::Long;
 
-my $seqnet;
-my $strucnet;
-my $fasta;
-my $pssm;
+use Reprof::Parser::Pssm;
 
-GetOptions( 'seqnet=s'      =>  \$seqnet,
-            'strucnet=s'    =>  \$strucnet,
-            'pssm=s'        =>  \$pssm,
-            'fasta=s'       =>  \$fasta );
+my $seqnet_dir;
+my $strucnet_dir;
+my $fasta_file;
+my $pssm_file;
+
+GetOptions( 'seqnet=s'      =>  \$seqnet_dir,
+            'strucnet=s'    =>  \$strucnet_dir,
+            'pssm=s'        =>  \$pssm_file,
+            'fasta=s'       =>  \$fasta_file );
+
+my $pssm = Reprof::Parser::Pssm->new($pssm_file);
 
