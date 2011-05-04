@@ -24,6 +24,10 @@ sub new {
     return $self;
 }
 
+sub new_from_matrix {
+    my ($class, $matrix, $num_inputs, $win) = @_;
+}
+
 sub num_features {
     my $self = shift;
     return $self->{_num_features};

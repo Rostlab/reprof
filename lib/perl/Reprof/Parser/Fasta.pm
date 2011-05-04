@@ -1,13 +1,14 @@
-package Reprof::Parser::Pssm;
+package Reprof::Parser::Fasta;
 
 use strict;
 use warnings;
 use feature qw(say);
 use Data::Dumper;
+use Reprof::Tools::Translator qw(res2profile);
 
 #--------------------------------------------------
 # name:        new
-# desc:        creates a new pssm parser object
+# desc:        creates a new fasta parser object
 # args:        filename/path
 # return:       parser object ref 
 #-------------------------------------------------- 
@@ -19,10 +20,6 @@ sub new {
         _pos        => [],
         _res        => [],
         _raw_score  => [],
-        _norm_score => [],
-        _pc_score   => [],
-        _info       => [],
-        _weight     => [],
         _loc        => [],
         _gc         => undef,
         _length     => 0
@@ -36,27 +33,19 @@ sub new {
 sub _parse {
     my ($self) = @_;
 
-    open PSSM, $self->{_file} or die "Could not open $self->{_file} ...\n";
-    my @pssm_cont = grep /^\s*\d+/, (<PSSM>);
-    chomp @pssm_cont;
-    close PSSM;
+    open FASTA, $self->{_file} or die "Could not open $self->{_file} ...\n";
+    my $header = <FASTA>; chomp $header;
+    my $sequence = <FASTA>; chomp $sequence;
+    close FASTA;
     
-    my $length = $self->{_length} = scalar @pssm_cont;
+    my $length = $self->{_length} = length $sequence;
 
-    foreach my $line (@pssm_cont) {
-        $line =~ s/^\s+//;
-        my @split = split /\s+/, $line;
-
-        push @{$self->{_pos}}, [$split[0]];
-        push @{$self->{_res}}, [$split[1]];
-        my @raws = @split[2..21];
-        my @norms = map _normalize_pssm($_), @raws;
-        push @{$self->{_raw_score}}, \@raws;
-        push @{$self->{_norm_score}}, \@norms;
-        push @{$self->{_pc_score}}, [(@split)[22 .. 41]];
-        push @{$self->{_info}}, [$split[42]];
-        push @{$self->{_weight}}, [$split[43]];
-        push @{$self->{_loc}}, [ $split[0] / $length ];
+    my $pos = 0;
+    foreach my $res (split //, $sequence) {
+        push @{$self->{_pos}}, [$pos];
+        push @{$self->{_res}}, [$res];
+        push @{$self->{_score}}, res2profile($res);
+        push @{$self->{_loc}}, [ $pos++ / $length ];
     }
 }
 

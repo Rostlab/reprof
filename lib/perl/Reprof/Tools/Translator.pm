@@ -1,26 +1,3 @@
-=head1 NAME
-
-Reprof::Tools::Translator - Several methods for letter conversion
-
-=head1 SYNOPSIS
-
-	use Reprof::Tools::Translator qw(lettercode structreduce);
-
-	my $onelettercode = lettercode('MET');	# returns 'M'
-	my $threelettercode = lettercode('M');	# returns 'MET'
-
-	my $reducedstruc = structreduce('G');	# returns 'H'
-
-=head1 AUTHOR
-
-hoenigschmid AT rostlab.org
-
-=head1 SUBROUTINES/METHODS
-
-=over 12
-
-=cut
-
 package Reprof::Tools::Translator;
 
 use strict;
@@ -28,11 +5,64 @@ use feature qw(say);
 
 use vars qw(@ISA @EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(hval three2one one2three lettercode structreduce id2pdb id2pdbchain aa2number ss2number);
+@EXPORT_OK = qw(res2profile hval three2one one2three lettercode structreduce id2pdb id2pdbchain res2number ss2number);
 
+my %struct = (
+	'G'	=> 'H',
+	'H'	=> 'H',
+	'I'	=> 'H',
+	'E'	=> 'E',
+	'B'	=> 'E'
+	);
+
+
+
+my %res2number_dict = (
+	'X' => 0,
+	'A' => 1,
+	'R' => 2,
+	'N' => 3,
+	'D' => 4,
+	'C' => 5,
+	'E' => 6,
+	'Q' => 7,
+	'G' => 8,
+	'H' => 9,
+	'I' => 10,
+	'L' => 11,
+	'K' => 12,
+	'M' => 13,
+	'F' => 14,
+	'P' => 15,
+	'S' => 16,
+	'T' => 17,
+	'W' => 18,
+	'Y' => 19,
+	'V' => 20,
+	0 => 'X',
+	1 => 'A',
+	2 => 'R',
+	3 => 'N',
+	4 => 'D',
+	5 => 'C',
+	6 => 'E',
+	7 => 'Q',
+	8 => 'G',
+	9 => 'H',
+	10 => 'I',
+	11 => 'L',
+	12 => 'K',
+	13 => 'M',
+	14 => 'F',
+	15 => 'P',
+	16 => 'S',
+	17 => 'T',
+	18 => 'W',
+	19 => 'Y',
+	20 => 'V'
+	);
 sub hval {
     my ($length, $pid) = @_;
-
     if ($length <= 11) {
         return $pid - 100.0;
     }
@@ -78,57 +108,11 @@ sub ss2number {
 	return 0;
 }
 
-# amino acid 2 numberdictionary
-my %aa2number_dict = (
-	'X' => 0,
-	'A' => 1,
-	'R' => 2,
-	'N' => 3,
-	'D' => 4,
-	'C' => 5,
-	'E' => 6,
-	'Q' => 7,
-	'G' => 8,
-	'H' => 9,
-	'I' => 10,
-	'L' => 11,
-	'K' => 12,
-	'M' => 13,
-	'F' => 14,
-	'P' => 15,
-	'S' => 16,
-	'T' => 17,
-	'W' => 18,
-	'Y' => 19,
-	'V' => 20,
-	0 => 'X',
-	1 => 'A',
-	2 => 'R',
-	3 => 'N',
-	4 => 'D',
-	5 => 'C',
-	6 => 'E',
-	7 => 'Q',
-	8 => 'G',
-	9 => 'H',
-	10 => 'I',
-	11 => 'L',
-	12 => 'K',
-	13 => 'M',
-	14 => 'F',
-	15 => 'P',
-	16 => 'S',
-	17 => 'T',
-	18 => 'W',
-	19 => 'Y',
-	20 => 'V'
-	);
-
-sub aa2number {
+sub res2number {
 	my $q = shift;
 	my $result;
 
-	$result = $aa2number_dict{uc($q)};
+	$result = $res2number_dict{uc($q)};
 	return $result if defined $result;
 	return 0;
 }
@@ -195,12 +179,6 @@ sub lettercode {
 	return one2three($q);
 }
 
-=item C<one2three(LETTERs)>
-
-Takes an amino acid one letter code and returns the 3 lc.
-If a string of length more than one is given, the last character is used.
-
-=cut
 
 sub one2three {
 	my $q = shift;
@@ -210,13 +188,6 @@ sub one2three {
 	return $one2three_dict{uc($q)};
 }
 
-=item C<three2one(LETTERs)>
-
-Takes an amino acid three letter code and returns the 1 lc.
-If a string of length more than three is given, the last three characters are used.
-If a string of length less than three is given, the sub returns the last character.
-
-=cut
 
 sub three2one {
 	my $q = shift;
@@ -226,21 +197,6 @@ sub three2one {
 	}
 	return substr $q, -1;
 }
-
-my %struct = (
-	'G'	=> 'H',
-	'H'	=> 'H',
-	'I'	=> 'H',
-	'E'	=> 'E',
-	'B'	=> 'E'
-	);
-
-=item C<structreduce(LETTER)>
-
-Reduces DSSP lettercode to H, E, L
-
-=cut
-
 sub structreduce {
 	my $q = uc( shift(@_) );
 
@@ -248,9 +204,5 @@ sub structreduce {
 	return 'L';
 
 }
-
-=back
-
-=cut
 
 1;
