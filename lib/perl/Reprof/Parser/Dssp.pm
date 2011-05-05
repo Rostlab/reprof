@@ -1,190 +1,101 @@
-=head1 NAME
-
-Reprof::Parser::Dssp - Parser for Dssp files
-
-=head1 SYNOPSIS
-
-	my $parser->new;
-	$parser->parse($file);
-
-	# Get array with chains:
-	$parser->chains;
-
-	# Get SS sequence:
-	$parser->ss;
-
-	# Get SS sequence for specific chain:
-	$parser->ss('A');
-
-	# Get amino acid sequence:
-	$parser->seq;
-
-	# Get amino acid sequence for specific chain:
-	$parser->seq('A');
-
-	# Get solvent acc. for specific residue (if unique chain)
-	$parser->acc(55);
-
-	# Get solvent acc. for specific res. and chain
-	$parser->acc(55, 'A');
-
-=head1 DESCRIPTION
-
-Self explanatory.
-
-=head1 AUTHOR
-
-hoenigschmid AT rostlab.org
-
-=head1 SUBROUTINES/METHODS
-
-=over 12
-
-=cut
-
 package Reprof::Parser::Dssp;
 
 use strict;
+use feature qw(say);
 
-use Reprof::Tools::Translator qw(structreduce id2pdb);
-
-=item C<new()>
-
-Create a new parser object.
-
-=cut
+use Reprof::Tools::Converter qw(convert_res convert_id convert_ss convert_acc);
 
 sub new {
-	my $self = {
-		_id		=> undef,
-		_acc	=> {},
-		_ss		=> {},
-		_seq	=> {}
-	};
+    my ($class, $file) = @_;
 
-	bless $self;
+    my $self = {
+        _file   => $file || warn "No file given to parser\n",
+        _chains => [],
+        _chain  => {}
+    };
+
+    bless $self, $class;
+    $self->_parse;
+    return $self;
 }
 
-=item C<parse(FILE)>
+sub _parse {
+    my $self = shift;
 
-Parse a dssp file.
+    my $id = convert_id($self->{_file}, "pdb");
 
-=cut
+    my $res_started = 0;
+    my $break = 0;
+    open FH, $self->{_file} or return 0;# "Could not open $file\n";
+    while (my $line = <FH>) {
+        if (!$res_started && $line =~ m/^  #  RESIDUE AA STRUCTURE/) {
+            $res_started = 1;
+        }
+        elsif ($res_started) {
+            if ($line =~ /!\*/) { # chain break
+                $break = 0;
+            }
+            elsif ($line =~ /!/) { # interrupted backbone 
+                $break++;
+            }
+            else {
+                my $resnr = _parsefield($line, 3, 5);
+                my $chain = _parsefield($line, 12, 12);# . $break;				
+                my $res = _parsefield($line, 14, 14);
+                my $ss  = _parsefield($line, 17, 17);
+                my $acc = _parsefield($line, 36, 38);
 
-sub parse {
-	my ($self, $file) = @_;
+                push @{$self->{_chain}{$chain}{_pos}}, $resnr;
+                push @{$self->{_chain}{$chain}{_acc}}, convert_acc($acc);
+                push @{$self->{_chain}{$chain}{_ss}}, convert_ss($ss, "oneletter");
+                push @{$self->{_chain}{$chain}{_res}}, convert_res($res, "oneletter");
 
-	$self->{_id} = id2pdb($file);
-	
-	my $res_started = 0;
-	my $break = 0;
-	open FH, $file or return 0;# "Could not open $file\n";
-	while (<FH>) {
-		if (!$res_started && m/^  #  RESIDUE AA STRUCTURE/) {
-			$res_started = 1;
-		}
-		elsif ($res_started) {
-			if (/!/) {
-				$break++;
-			}
-			else {
-				my $resnr = _parsefield($_, 3, 5);
-				my $chain = _parsefield($_, 12, 12) . $break;				
-				my $res = _parsefield($_, 14, 14);
-				my $ss  = structreduce( _parsefield($_, 17, 17) );
-				my $acc = _parsefield($_, 36, 38);
+            }
+        }
+    }
+    close FH;
 
-				$self->{_acc}->{$chain}->{$resnr} = $acc;
-				$self->{_ss}->{$chain} .= $ss;
-				$self->{_seq}->{$chain} .= $res;
-			}
-		}
-	}
-	close FH;
+    foreach my $chain (sort keys %{$self->{_chain}}) {
+        push @{$self->{_chains}}, $chain;
+        $self->{_chain}{$chain}{_id} = "$id:$chain";
+    }
 }
 
-=item C<id()>
+sub get_pos {
+    my ($self, $chain) = @_;
 
-Returns the id (parsed from filename).
-
-=cut
-
-sub id {
-	my $self = shift;
-	return $self->{_id};
+    return $self->{_chain}{$chain}{_pos};
 }
 
-=item C<acc(RESNR, [CHAIN])>
+sub get_ss {
+    my ($self, $chain) = @_;
 
-Returns the solvent acc. for the given redidue number an chain. Residue number is mandatory, if you omit the chain id, the first chain is used.
-
-=cut
-
-sub acc {
-	my ($self, $resnr, $chain) = @_;
-
-	$chain = ($self->chains)[0] unless defined $chain;
-
-	return $self->{_acc}->{$chain}->{$resnr};
+    return $self->{_chain}{$chain}{_ss};
 }
 
-=item C<chains()>
+sub get_res {
+    my ($self, $chain) = @_;
 
-Returns an array containing the chain identifiers
-
-=cut
-
-sub chains {
-	my $self = shift;
-
-	return keys %{$self->{_seq}};
+    return $self->{_chain}{$chain}{_res};
 }
 
-=item C<seq([CHAIN])>
+sub get_acc {
+    my ($self, $chain) = @_;
 
-Returns the sequence for the chain provided as argument.
-If no argument is given, all chains are concatenated.
-
-=cut
-
-sub seq {
-	my ($self, $chain) = @_;
-
-    unless (defined $chain) {
-		my $temp;
-		foreach (sort {$a cmp $b} (keys %{$self->{_seq}})) {
-			$temp .= $self->{_seq}->{$_};
-		}
-		return $temp;
-	}
-
-	return $self->{_seq}->{$chain};
+    return $self->{_chain}{$chain}{_acc};
 }
 
-=item C<ss([CHAIN])>
+sub get_id {
+    my ($self, $chain) = @_;
 
-Returns the SS sequence for the chain provided as argument.
-If no argument is given, all chains are concatenated.
-
-=cut
-
-sub ss {
-	my ($self, $chain) = @_;
-
-    unless (defined $chain) {
-		my $temp;
-		foreach (sort {$a cmp $b} (keys %{$self->{_ss}})) {
-			$temp .= $self->{_ss}->{$_};
-		}
-		return $temp;
-	}
-
-	return $self->{_ss}->{$chain};
+    return $self->{_chain}{$chain}{_id};
 }
 
-=back
+sub get_chains {
+    my $self = shift;
 
-=cut
+    return $self->{_chains};
+}
 
 #--------------------------------------------------
 # INTERN
@@ -195,19 +106,19 @@ sub ss {
 # (taking the numbers provided in the pdb doc)
 #-------------------------------------------------- 
 sub _parsefield {
-	my ($entry, $from, $to) = @_;
-	my $val;
-	if (defined $to) {
-		$val = substr $entry, $from - 1, $to-($from - 1);
-	}
-	else {
-		$val = substr $entry, $from - 1;
-	}
+    my ($entry, $from, $to) = @_;
+    my $val;
+    if (defined $to) {
+        $val = substr $entry, $from - 1, $to-($from - 1);
+    }
+    else {
+        $val = substr $entry, $from - 1;
+    }
 
-	chomp $val;
-	$val =~ s/^\s+//;
-	$val =~ s/\s+$//;
-	return $val;
+    chomp $val;
+    $val =~ s/^\s+//;
+    $val =~ s/\s+$//;
+    return $val;
 }
 
 1;
