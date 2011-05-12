@@ -4,10 +4,9 @@ use feature qw(say);
 use Getopt::Long;
 use Reprof::Tools::Converter qw(convert_id);
 
-my $fasta_glob;
-my $pssm_dir;
-
 my $big = '/var/tmp/rost_db/data/big/big_80';
+my $fasta_glob = '/mnt/project/reprof/data/fasta/tmp/fasta*';
+my $pssm_dir = '/mnt/project/reprof/data/pssm/';
 
 my $qsub_file_head =    "#!/bin/sh\n".
                         "export PERL5LIB=/mnt/project/reprof/lib/perl\n".
@@ -50,8 +49,8 @@ foreach my $fastafile (@fastafiles) {
                 "-Q", $pssmfile);
 
     open FH, '>', $tmpfile or die "Could not open $tmpfile\n";
-    say FH $qsub_file_head;
-    say FH (join ' ', @cmd);
+    say  $qsub_file_head;
+    say  (join ' ', @cmd);
     close FH;
     chmod 0777, $tmpfile or die "Could not change file permissions of $tmpfile\n";
     say "$qsub";

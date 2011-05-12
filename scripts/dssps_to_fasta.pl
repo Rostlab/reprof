@@ -11,14 +11,17 @@ my $fasta_file;
 
 GetOptions( 
     "d|dssp=s"      => \$dssp_glob,
-    "m|minlength=s" => \$minlength,
+    "m|minlength=i" => \$minlength,
     "f|fasta=s"     => \$fasta_file
 );
 
 my @dssp_files = glob $dssp_glob;
 
 open FASTA, '>', $fasta_file;
+
 foreach my $file (@dssp_files) {
+    say "Parsing $file";
+
     my $id = convert_id($file, 'pdb');
 
     my $parser = Reprof::Parser::Dssp->new($file);
