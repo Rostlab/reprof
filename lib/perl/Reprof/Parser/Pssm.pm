@@ -47,34 +47,52 @@ sub _parse {
         $line =~ s/^\s+//;
         my @split = split /\s+/, $line;
 
-        push @{$self->{_pos}}, [$split[0]];
-        push @{$self->{_res}}, [$split[1]];
+        push @{$self->{_pos}}, $split[0];
+        push @{$self->{_res}}, $split[1];
         my @raws = @split[2..21];
         my @norms = map _normalize_pssm($_), @raws;
         push @{$self->{_raw_score}}, \@raws;
         push @{$self->{_norm_score}}, \@norms;
         push @{$self->{_pc_score}}, [(@split)[22 .. 41]];
-        push @{$self->{_info}}, [$split[42]];
-        push @{$self->{_weight}}, [$split[43]];
-        push @{$self->{_loc}}, [ $split[0] / $length ];
+        push @{$self->{_info}}, $split[42];
+        push @{$self->{_weight}}, $split[43];
+        push @{$self->{_loc}}, ($split[0] / $length);
     }
 }
 
-sub get_field {
-    my ($self, $field) = @_;
-
-    return $self->{"_$field"};
+sub get_pos {
+    my $self = shift;
+    return $self->{_pos};
 }
 
-sub get_fields {
-    my ($self, @fields) = @_;
+sub get_res {
+    my $self = shift;
+    return $self->{_res};
+}
 
-    my @result;
-    foreach my $field (@fields) {
-        push @result, $self->{"_$field"};
-    }
+sub get_raw {
+    my $self = shift;
+    return $self->{_raw_score};
+}
 
-    return \@result;
+sub get_normalized {
+    my $self = shift;
+    return $self->{_norm_score};
+}
+
+sub get_pc {
+    my $self = shift;
+    return $self->{_pc_score};
+}
+
+sub get_info {
+    my $self = shift;
+    return $self->{_info};
+}
+
+sub get_weight {
+    my $self = shift;
+    return $self->{_weight};
 }
 
 #--------------------------------------------------

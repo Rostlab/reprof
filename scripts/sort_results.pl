@@ -9,26 +9,44 @@ use strict;
 use feature qw(say);
 
 my $col = shift;
+my $reverse = 0;
+if ($col eq 'r') {
+    $reverse = 1;
+    $col = shift;
+}
 my @bests;
 foreach my $file (@ARGV) {
-    my $max_val = -1;
-    my @max_col;
-    
+    my @vals;
+
     open FH, $file or die "Could not open $file\n";
     while (<FH>) {
+        next if /^#/;
+
         my @split = split /\s+/;
-        if ($split[$col] >= $max_val) {
-            $max_val = $split[$col];
-            @max_col = @split;
-        }
+        push @split, $file;
+        push @vals, \@split;
     }
     close FH;
     
-    push @max_col, $file;
-    push @bests, \@max_col;
+    if (scalar @vals > 0) {
+        my $winner;
+        if ($reverse) {
+            $winner = (sort {$a->[$col] <=> $b->[$col]} @vals)[0];
+        }
+        else {
+            $winner = (sort {$b->[$col] <=> $a->[$col]} @vals)[0];
+        }
+        push @bests, $winner;
+    }
 }
 
-my @sorted = sort {$a->[$col] <=> $b->[$col]} @bests;
+my @sorted;
+if ($reverse) {
+    @sorted = sort {$a->[$col] <=> $b->[$col]} @bests;
+}
+else {
+    @sorted = sort {$b->[$col] <=> $a->[$col]} @bests;
+}
 
 foreach my $item (@sorted) {
     say join "\t", @$item;

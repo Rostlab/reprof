@@ -9,31 +9,37 @@ sub new {
     my ($class, $win, $data) = @_;
 
     my $self = {  
-        _data           => $data || [],
+        _data           => $data // {},
         _iter_original  => [],
         _iter_current   => [],
         _new_flag       => 1,
         _dps            => 0,
         _prots          => 0,
         _win            => $win,
+        _num_features   => undef,
+        _num_outputs    => undef,
+        _iter           => 'original'
     };
 
     return bless $self, $class;
 }
 
-sub subset {
-    my ($self, $num_bins, @parts) = @_;
+sub num_features {
+    my $self = shift;
+    return $self->{_num_features};
+}
 
-    my $pos = 0;
+sub num_outputs {
+    my $self = shift;
+    return $self->{_num_outputs};
+}
 
-    #--------------------------------------------------
-    # TODO 
-    #-------------------------------------------------- 
-
-    my @subdata = (@{$self->{_data}})[@parts];
-    my $sset = Reprof::Tools::Set->new($self->win, \@subdata);
-
-    return $sset;
+sub iter {
+    my ($self, $iter) = @_;
+    if (defined $iter) {
+        $self->{_iter} = $iter;
+    }
+    return $self->{_iter};
 }
 
 sub win {
@@ -45,100 +51,75 @@ sub win {
 }
 
 sub add {
-    my ($self, $descs_opt, $feats_opt, $outs_opt) = @_;
+    my ($self, $id, $desc, $feat, $out) = @_;
+
+    $self->{_num_features} = scalar @{$feat} + 1;
+    $self->{_num_outputs} = scalar @{$out};
     
-    my @descs;
-    my @feats;
-    my @outs;
+    push @{$self->{_data}{$id}}, [$desc, $feat, $out];
 
-    my $tmp;
+    my $pos = scalar @{$self->{_data}{$id}} - 1;
 
-    my $index = scalar @{$self->{_data}};
-    foreach my $pos (0 .. scalar @{$feats_opt->[0]} - 1) {
-        my @descs_tmp;
-        foreach my $desc (@$descs_opt) {
-            push @descs_tmp, @{$desc->[$pos]};
-        }
-        my @feats_tmp;
-        foreach my $feat (@$feats_opt) {
-            push @feats_tmp, @{$feat->[$pos]};
-        }
-        my @outs_tmp;
-        foreach my $out (@$outs_opt) {
-            push @outs_tmp, @{$out->[$pos]};
-        }
-
-        push @$tmp, [\@descs_tmp, \@feats_tmp, \@outs_tmp];
-        push @{$self->{_iter_original}}, [$index, $pos];
-    }
-
-    push @{$self->{_data}}, $tmp;
+    push @{$self->{_iter_original}}, [$id, $pos];
 }
 
-sub reset_iter_random {
+sub reset_iter {
     my $self = shift;
 
     if ($self->{_new_flag}) {
-        $self->{_new_flag}--;
+        $self->{_new_flag} = 0;
     }
 
     $self->{_iter_current} = [];
-    push @{$self->{_iter_current}}, (shuffle @{$self->{_iter_original}});
-}
 
-sub reset_iter_original {
-    my $self = shift;
-
-    if ($self->{_new_flag}) {
-        $self->{_new_flag}--;
+    if ($self->{_iter} eq 'random') {
+        push @{$self->{_iter_current}}, (shuffle @{$self->{_iter_original}});
     }
-
-    $self->{_iter_current} = [];
-    push @{$self->{_iter_current}}, @{$self->{_iter_original}};
+    elsif ($self->{_iter} eq 'original') {
+        push @{$self->{_iter_current}}, @{$self->{_iter_original}};
+    }
 }
 
 sub next_dp {
     my ($self) = @_;
 
     if ($self->{_new_flag}) {
-        $self->{_new_flag}--;
-        $self->reset_iter_original;
+        $self->{_new_flag} = 0;
+        $self->reset_iter;
     }
 
     my $current = shift @{$self->{_iter_current}};
     unless (defined $current) {
-        $self->reset_iter_original;
+        $self->reset_iter;
         return undef;
     }
-
-#--------------------------------------------------
-#     say Dumper($self->{_data});
-#-------------------------------------------------- 
 
     my ($prot, $center) = @$current;
 
     my $win_start = $center - ($self->{_win} - 1) / 2;
     my $win_end = $center + ($self->{_win} - 1) / 2;
-    my $seq_length = scalar @{$self->{_data}->[$prot]};
+    my $seq_length = scalar @{$self->{_data}{$prot}};
 
     my @tmp_desc;
     my @tmp_in;
     my @tmp_out;
+    my @tmp_center;
 
-    push @tmp_out, @{$self->{_data}->[$prot][$center][2]};
-    push @tmp_desc, @{$self->{_data}->[$prot][$center][0]};
+    push @tmp_out, @{$self->{_data}{$prot}->[$center][2]};
+    push @tmp_desc, @{$self->{_data}{$prot}->[$center][0]};
+    push @tmp_center, @{$self->{_data}{$prot}->[$center][1]};
 
     foreach my $pointer ($win_start .. $win_end) {
         if ($pointer < 0 || $pointer >= $seq_length) {
             # add zero filled array with 1 for out of sequence bit
-            push @tmp_in, (map 0, @{$self->{_data}->[$prot][$center][1]}), 1;
+            push @tmp_in, (map 0, @{$self->{_data}{$prot}->[$center][1]}), 1;
         }
         else {
-            push @tmp_in, @{$self->{_data}->[$prot][$pointer][1]}, 0;
+            push @tmp_in, @{$self->{_data}{$prot}->[$pointer][1]}, 0;
         }
     }
 
-    return [\@tmp_desc, \@tmp_in, \@tmp_out];
+    return [\@tmp_desc, \@tmp_in, \@tmp_out, \@tmp_center, $prot];
 }
 
 1;

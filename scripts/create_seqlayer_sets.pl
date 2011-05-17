@@ -11,30 +11,34 @@ use feature qw(say);
 
 use AI::FANN qw(:all);
 use Getopt::Long;
-use Reprof::Tools::Translator qw(id2pdb aa2number ss2number);
+use Reprof::Tools::Converter qw(convert_id convert_ss);
 use Reprof::Parser::Dssp;
-use File::Spec;
+use Reprof::Parser::Pssm;
+use Reprof::Tools::Featurefactory;
 use List::Util qw(shuffle);
+use Data::Dumper;
 
 my $dssp_dir; 
 my $pssm_dir;
 my $fasta_file;
 my $out_dir;
 my $num_sets;
-my $prefix = "set_";
+my $prefix = "x";
 
-my $num_desc = 3; # DP number as ss 
-my $num_features = 23;
-my $num_outputs = 3;
+my $num_desc = 4; # DP number as ss 
+my $num_features = 25;
+my $ss_num_outputs = 3;
+my $acc_num_outputs = 3;
 
 my $debug = 0;
 
-GetOptions(     'out=s' 	=> \$out_dir,
+
+GetOptions(     'ssout=s' 	=> \$out_dir,
+                'accout=s' 	=> \$out_dir,
                 'fasta=s'	=> \$fasta_file,
                 'pssm=s'	=> \$pssm_dir,
                 'dssp=s'	=> \$dssp_dir,
                 'sets=i'	=> \$num_sets,
-                'prefix=s'	=> \$prefix,
                 'debug'		=> \$debug);
 
 unless ($out_dir && $fasta_file && $pssm_dir && $dssp_dir && $num_sets) {
@@ -50,11 +54,10 @@ unless ($out_dir && $fasta_file && $pssm_dir && $dssp_dir && $num_sets) {
 say "Getting ids/chains from fasta...";
 my %proteins;
 open FASTA, $fasta_file or die "Could not open $fasta_file\n";
-while (<FASTA>) {
-	if (/^>/) {
-		my $id = substr $_, 1;
-                chomp $id;
-		$proteins{$id}++;
+while (my $line = <FASTA>) {
+	if ($line =~ m/^>/) {
+		my $id = convert_id($line, 'pdbchain');
+        $proteins{$id}++;
 	}
 }
 close FASTA;
@@ -70,13 +73,12 @@ my @shuffled_protein_ids = shuffle(keys %proteins);
 # Open outputfiles and write headers
 #-------------------------------------------------- 
 my @out_fhs;
-foreach (1 .. $num_sets) {
+foreach my $set (1 .. $num_sets) {
     my $fh;
-    open $fh, '>', (File::Spec->catfile($out_dir, "$prefix.$_.set"));
+    open $fh, '>', "$out_dir/$set.set" or die "Could not open outputfil\n";
     say $fh "HD\t$num_desc\t$num_features\t$num_outputs";
     push @out_fhs, $fh;
 }
-
 
 #--------------------------------------------------
 # Iterate through proteins, gather data from DSSP
@@ -87,6 +89,8 @@ my $faulty = 0;
 my $current_fh;
 
 for my $chainid (@shuffled_protein_ids) {
+#next unless $chainid =~ m/3izr:G/;
+
     #--------------------------------------------------
     # shift the filehandle out of the array and 
     # put it back in at the end to circulate
@@ -95,10 +99,9 @@ for my $chainid (@shuffled_protein_ids) {
     push @out_fhs, $current_fh;
     
     my ($id, $chain) = split /:/, $chainid;
-    say $current_fh "ID $id:$chain";
 
-    my $dssp_file = File::Spec->catfile($dssp_dir.'/'.(substr $id, 1, 2), "pdb$id.dssp");
-    my $pssm_file = File::Spec->catfile($pssm_dir.'/'. "$id:$chain.pssm");
+    my $dssp_file = "$dssp_dir/" . (substr $id, 1, 2) . "/pdb$id.dssp";
+    my $pssm_file = "$pssm_dir/$id:$chain.pssm";
 
     unless (-e $dssp_file) {
         warn "$dssp_file does not exist\n" unless -e $dssp_file;
@@ -116,66 +119,49 @@ for my $chainid (@shuffled_protein_ids) {
     #--------------------------------------------------
     # DSSP
     #-------------------------------------------------- 
+    my $dssp_parser = Reprof::Parser::Dssp->new($dssp_file);
 
-    my $parser = Reprof::Parser::Dssp->new;
-    $parser->parse($dssp_file);
-
-    unless ( defined $parser->ss($chain)) {
-        $faulty++;
-        warn "Something is wrong with $id:$chain (dssp)\n";
-        next;
-    }
-
-    my @ss_seq = split //, ($parser->ss($chain));
+    my $res = $dssp_parser->get_res($chain);
+    my $ss = $dssp_parser->get_ss($chain);
+    my $acc = $dssp_parser->get_acc($chain);
 
     #--------------------------------------------------
     # PSSM and output
     #-------------------------------------------------- 
-    open PSSM, $pssm_file or die "Could not open $pssm_file ...\n";
-    my @pssm_cont = grep /^\s*\d+/, (<PSSM>);
-    chomp @pssm_cont;
-    close PSSM;
+    my $pssm_parser = Reprof::Parser::Pssm->new($pssm_file);
+    my $pssm_norm = $pssm_parser->get_normalized;
+    my $pssm_info = $pssm_parser->get_info;
+    my $pssm_weight = $pssm_parser->get_weight;
 
-    if (scalar @pssm_cont <= 1) {
-        $faulty++;
-        warn "Something is wrong with $id:$chain (pssm)\n";
-        next;
-    }
+    #--------------------------------------------------
+    # IMPLICIT FEATURES
+    #-------------------------------------------------- 
+    my $featurefactory = Reprof::Tools::Featurefactory->new($res);
+    my $feat_loc = $featurefactory->get_loc;
+    my $feat_polarity = $featurefactory->get_polarity;
+    my $feat_charge = $featurefactory->get_charge;
 
-    
-    my $pos = 0;
-    foreach my $line (@pssm_cont) {
-        $line =~ s/^\s+//;
-        my @split = split /\s+/, $line;
-        
-        #--------------------------------------------------
-        # Input 
-        #-------------------------------------------------- 
-        # print DP, the position, the residue name and the ss  
-        print $current_fh "DP\t$pos\t" . "$split[1]\t" . $ss_seq[$pos] . "\t";
-
-        # add the normalized pssm values
-        foreach my $iter (2 .. 21) {
-            print $current_fh "".(sprintf "%.5f", normalize_pssm($split[$iter])) . "\t";
+    say $current_fh "ID $chainid";
+    foreach my $pos (0 .. scalar @{$res} - 1) {
+        print $current_fh "DP\t";
+        print $current_fh $pos."\t";
+        print $current_fh $res->[$pos]."\t";
+        print $current_fh $ss->[$pos]."\t";
+        print $current_fh (sprintf "%.2f", $acc->[$pos])."\t";
+        my $joined_pssm = join "\t", @{$pssm_norm->[$pos]};
+        print $current_fh "$joined_pssm\t";
+        print $current_fh $pssm_info->[$pos]."\t";
+        print $current_fh $pssm_weight->[$pos]."\t";
+        print $current_fh $feat_loc->[$pos]."\t";
+        print $current_fh $feat_polarity->[$pos]."\t";
+        print $current_fh $feat_charge->[$pos]."\t";
+        if ($mode eq 'ss') {
+            my $joined_ss = join "\t", @{convert_ss($ss->[$pos], 'profile')};
+            say $current_fh $joined_ss; 
         }
-
-        # add information per position and relative weight of gapless real matches
-        foreach my $iter (42 .. 43) {
-            print $current_fh "$split[$iter]\t";
+        elsif ($mode eq 'acc') {
+            say $current_fh $acc->[$pos];
         }
-
-        # add position in protein (in percent)
-        print $current_fh sprintf "%.5f\t", ($pos / scalar @pssm_cont);
-
-        #--------------------------------------------------
-        # Output 
-        #-------------------------------------------------- 
-        # print the output (ss) values as triple
-        my @tmp_ss = empty_array(3);
-        $tmp_ss[ss2number($ss_seq[$pos])] = 1;
-        say $current_fh (join "\t", @tmp_ss);
-
-        $pos++;
     }
 }
 
@@ -186,53 +172,3 @@ foreach my $fh (@out_fhs) {
     close $fh;
 }
 say "$faulty faulty ids...";
-
-#--------------------------------------------------
-# Little helpers
-#-------------------------------------------------- 
-
-
-
-#--------------------------------------------------
-# name:        normalize_pssm
-# args:        pssm value
-# return:      normalized pssm value
-#-------------------------------------------------- 
-sub normalize_pssm {
-    my $x = shift;
-    return 1.0 / (1.0 + exp(-$x));
-}
-
-#--------------------------------------------------
-# name:        empty_array
-# args:        size of the resulting array
-# return:      an array of given length filled with
-#              zeroes 
-#-------------------------------------------------- 
-sub empty_array {
-	my $size = shift;
-
-	my @array;
-	foreach (1..$size) {
-		push @array, 0;
-	}
-
-	return @array;
-}
-
-sub output_to_ss {
-	my ($h, $e, $l) = @_;
-	
-	my $maxpos = -1;
-	if ($h >= $e && $h >= $l) {
-		$maxpos = 0;
-	}
-	elsif ($e >= $h && $e >= $l) {
-		$maxpos = 1;
-	}
-	elsif ($l >= $h && $l >= $e) {
-		$maxpos = 2;
-	}
-
-	return ss2number($maxpos);
-}

@@ -13,12 +13,20 @@ my $debug = 0;
 sub new {
 	my ($class, $size) = @_;
 	my $self = [$size, []];
+
+    
+    if ($size == 1) {
+        $self->[1] = [0, 0];
+    }
+    else {
         foreach my $i (0 .. $size-1) {
             push @{$self->[1]}, [];
             foreach (0 .. $size-1) {
                 push @{$self->[1][$i]}, 0;
             }
         }
+    }
+
 	
 	return bless $self, $class;
 }
@@ -66,7 +74,7 @@ sub b {
 # Q_i
 sub Q_i {
     my ($self, $i) = @_;
-    return ($self->[1][$i][$i] / $self->b_i($i)) * 100;
+    return ($self->[1][$i][$i] / $self->b_i($i));
 }
 
 # three state accuracy
@@ -82,10 +90,24 @@ sub Q3 {
 sub add {
 	my ($self, $observed, $predicted) = @_;
 
-	my $obs = $self->_list_max_position($observed);
-	my $pred = $self->_list_max_position($predicted);
-
+    if ($self->[0] == 1) {
+        my $res = ($predicted->[0] - $observed->[0]);
+        if ($res < 0) {
+            $res *= -1;
+        }
+        $self->[1][0] += $res;
+        $self->[1][1]++;
+    }
+    else {
+        my $obs = $self->_list_max_position($observed);
+        my $pred = $self->_list_max_position($predicted);
         $self->[1][$obs][$pred]++;
+    }
+}
+
+sub mse {
+    my $self = shift;
+    return ($self->[1][0] / $self->[1][1]);
 }
 
 sub _list_max_position {

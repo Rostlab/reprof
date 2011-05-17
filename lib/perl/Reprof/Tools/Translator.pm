@@ -82,6 +82,9 @@ sub id2pdb {
 	while ($id =~ m/(\d[\d\w]{3})/g) {
 		$result = $1;
 	}
+    if ($result =~ m/:/) {
+        substr($result, -1) = uc(substr($result, -1));
+    }
 	lc($result);
 }
 

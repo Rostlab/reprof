@@ -4,10 +4,11 @@ use strict;
 use feature qw(say);
 use Data::Dumper;
 use Reprof::Tools::Measure;
+use Reprof::Tools::Set;
 
 use vars qw(@ISA @EXPORT_OK);
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(train_nn run_nn);
+@EXPORT_OK = qw(train_nn run_nn run_nn_return_set);
 
 #--------------------------------------------------
 # name:        train_nn
@@ -31,7 +32,9 @@ sub train_nn {
 # return:      ref to array containing the results
 #-------------------------------------------------- 
 sub run_nn {
-    my ($nn, $set, $measure) = @_;
+    my ($nn, $set, $measure, $win) = @_;
+
+    $set->win($win) if defined $win;
 
     my @results;
 
@@ -39,12 +42,31 @@ sub run_nn {
         $nn->reset_MSE;
         my $result = $nn->run($dp->[1]);
         push @results, $result;
-        if (defined $measure) {
+        if (defined $measure && defined $dp->[2]) {
             $measure->add($dp->[2], $result);
         }
     }
 
     return \@results;
+}
+
+sub run_nn_return_set {
+    my ($nn, $set, $measure, $win) = @_;
+
+    $set->win($win) if defined $win;
+
+    my $resultset = Reprof::Tools::Set->new;
+
+    while (my $dp = $set->next_dp) {
+        $nn->reset_MSE;
+        my $result = $nn->run($dp->[1]);
+        $resultset->add($dp->[4], [], $result, $dp->[2]);
+        if (defined $measure && defined $dp->[2]) {
+            $measure->add($dp->[2], $result);
+        }
+    }
+
+    return $resultset;
 }
 
 1;

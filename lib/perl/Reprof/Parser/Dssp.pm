@@ -49,7 +49,6 @@ sub _parse {
                 push @{$self->{_chain}{$chain}{_acc}}, convert_acc($acc);
                 push @{$self->{_chain}{$chain}{_ss}}, convert_ss($ss, "oneletter");
                 push @{$self->{_chain}{$chain}{_res}}, convert_res($res, "oneletter");
-
             }
         }
     }

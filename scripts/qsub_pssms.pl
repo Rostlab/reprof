@@ -5,7 +5,7 @@ use Getopt::Long;
 use Reprof::Tools::Converter qw(convert_id);
 
 my $big = '/var/tmp/rost_db/data/big/big_80';
-my $fasta_glob = '/mnt/project/reprof/data/fasta/tmp/fasta*';
+my $fasta_glob = '/mnt/project/reprof/data/fasta/tmp/x*';
 my $pssm_dir = '/mnt/project/reprof/data/pssm/';
 
 my $qsub_file_head =    "#!/bin/sh\n".
@@ -49,10 +49,10 @@ foreach my $fastafile (@fastafiles) {
                 "-Q", $pssmfile);
 
     open FH, '>', $tmpfile or die "Could not open $tmpfile\n";
-    say  $qsub_file_head;
-    say  (join ' ', @cmd);
+    say FH $qsub_file_head;
+    say FH (join ' ', @cmd);
     close FH;
     chmod 0777, $tmpfile or die "Could not change file permissions of $tmpfile\n";
-    say "$qsub";
+    say `$qsub`;
     unlink $tmpfile or die "Could not delete $tmpfile\n";
 }

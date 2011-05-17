@@ -11,35 +11,37 @@ use feature qw(say);
 use Data::Dumper;
 use AI::FANN qw(:all);
 use Getopt::Long;
-use File::Spec;
 use List::Util qw(shuffle);
-use Reprof::Parser::Dssp;
-use Reprof::Tools::Translator qw(id2pdb aa2number ss2number);
+use Reprof::Parser::Set;
 use Reprof::Tools::Set;
 use Reprof::Tools::Measure;
+use Reprof::Methods::Fann qw(train_nn run_nn run_nn_return_set);
 
-my $train_dir;
-my $valid_dir;
-my $test_dir;
+my $train_file;
+my $crosstrain_file;
+my $test_file;
 
-my $window_size = 17;
-my $num_hiddens = 50;
+my $window_size = 11;
+my $num_hiddens = 30;
 
 my $max_epochs = 1000;
 my $learn_rate = 0.01;
 my $learn_moment = 0.1;
 
-my $max_decreasing_epochs = 20;
+my $max_decreasing_epochs = 10;
 
 my $debug = 0;
 my $net_file = "./test.net";	
 my $result_file = "./test.data";
 
+my $prenet_file;
+
 GetOptions(	
-			'train=s'   	=> \$train_dir,
-			'valid=s'   	=> \$valid_dir,
-			'test=s'    	=> \$test_dir,
+			'train=s'   	=> \$train_file,
+			'crosstrain=s'   	=> \$crosstrain_file,
+			'test=s'    	=> \$test_file,
 			'net=s'	    	=> \$net_file,
+			'prenet=s'      => \$prenet_file,
 			'data=s'    	=> \$result_file,
 			'window=i'  	=> \$window_size,
 			'hidden=i'  	=> \$num_hiddens,
@@ -49,15 +51,15 @@ GetOptions(
 			'debug'	        => \$debug
 			);
 
-unless ($train_dir && $valid_dir && $test_dir) {
+unless ($train_file && $crosstrain_file && $test_file) {
     say "\nDESCRIPTION:";
     say "trains the reprof neural network with the given datasets";
 
     say "\nOPTIONS:";
     say "-train";
     say "\tdir containing the trainset";
-    say "-valid";
-    say "\tdir containing the validset";
+    say "-crosstrain";
+    say "\tdir containing the crosstrainset";
     say "-test";
     say "\tdir containing the testset";
     say "-net";
@@ -75,23 +77,40 @@ unless ($train_dir && $valid_dir && $test_dir) {
     say "-epochs";
     say "\tmaximum number of epochs";
 
-    die "\nInvalid options";
+    die "\nIncrosstrain options";
 }
 
 #--------------------------------------------------
 # Open and parse setfiles
 #-------------------------------------------------- 
-print "Parsing trainset(s)... ";
-my $train_set = Reprof::Tools::Set->new($train_dir, $window_size);
-say "".($train_set->size)." dps";
+sub init_set {
+    my ($set_file) = @_;
 
-print "Parsing validset(s)... ";
-my $valid_set = Reprof::Tools::Set->new($valid_dir, $window_size);
-say "".($valid_set->size)." dps";
+    my $set;
+    my $set_parser = Reprof::Parser::Set->new($set_file);
+    if (defined $prenet_file) {
+        my $prenet = AI::FANN->new_from_file($prenet_file);
+        my $preset = $set_parser->get_set;
+        my ($wsize) = ($prenet_file =~ m/\.w(\d+)\./);
+        $preset->win($wsize);
+        $set = run_nn_return_set($prenet, $preset);
+    }
+    else {
+        $set = $set_parser->get_set;
+    }
+    $set->win($window_size);
+    $set->iter('random');
+    $set->reset_iter;
 
-print "Parsing testset(s)... ";
-my $test_set = Reprof::Tools::Set->new($test_dir, $window_size);
-say "".($test_set->size)." dps";
+    return $set;
+}
+
+print "Parsing trainset... ";
+my $train_set = init_set($train_file);
+print "Parsing crosstrainset... ";
+my $crosstrain_set = init_set($crosstrain_file);
+print "Parsing testset... ";
+my $test_set = init_set($test_file);
 
 #--------------------------------------------------
 # Helper variables
@@ -101,7 +120,7 @@ my $num_outputs = $train_set->num_outputs;
 
 my $num_inputs = $window_size * $num_features;
 
-my $max_q3 = -1;
+my $max_val = -1;
 my $decreasing_epochs = 0;
  
 #--------------------------------------------------
@@ -121,12 +140,6 @@ $ann->learning_momentum($learn_moment);
 #-------------------------------------------------- 
 # Prepare output
 #-------------------------------------------------- 
-while (-e $net_file) {
-    $net_file .= '.copy';
-}
-while (-e $result_file) {
-    $result_file .= '.copy';
-}
 open RESULT, ">", $result_file or die "Could not open $result_file\n";
 select RESULT;
 $|++;
@@ -148,32 +161,55 @@ foreach my $epoch (1 .. $max_epochs) {
     #-------------------------------------------------- 
     # trainset
     print "Epoch $epoch: benchmark trainset... ";
-    my $train_measure = test_nn($ann, $train_set);
-	my $train_q3 = $train_measure->Q3;
-    printf "Q3: %.3f\n", $train_q3;
+    my $train_measure = Reprof::Tools::Measure->new($num_outputs);
+    run_nn($ann, $train_set, $train_measure);
+    if ($train_measure->size == 1) {
+        printf "MSE: %.3f\n", $train_measure->mse;
+    }
+    else {
+        printf "Q3: %.3f L: %.3f H: %.3f E: %.3f\n", $train_measure->Q3, $train_measure->Q_i(0), $train_measure->Q_i(1), $train_measure->Q_i(2);
+    }
     
-    # validset
-    print "Epoch $epoch: benchmark validset... ";
-    my $valid_measure = test_nn($ann, $valid_set);
-	my $valid_q3 = $valid_measure->Q3;
-    printf "Q3: %.3f\n", $valid_q3;
+    # crosstrainset
+    print "Epoch $epoch: benchmark crosstrainset... ";
+    my $crosstrain_measure = Reprof::Tools::Measure->new($num_outputs);
+    run_nn($ann, $crosstrain_set, $crosstrain_measure);
+    my $crosstrain_current;
+    if ($crosstrain_measure->size == 1) {
+        $crosstrain_current = 1 - $crosstrain_measure->mse;
+        printf "MSE: %.3f\n", $crosstrain_measure->mse;
+    }
+    else {
+        $crosstrain_current = $crosstrain_measure->Q3;
+        printf "Q3: %.3f L: %.3f H: %.3f E: %.3f\n", $crosstrain_measure->Q3, $crosstrain_measure->Q_i(0), $crosstrain_measure->Q_i(1), $crosstrain_measure->Q_i(2);
+    }
 
     
     # testset
     print "Epoch $epoch: benchmark testset... ";
-    my $test_measure = test_nn($ann, $test_set);
-    my $test_q3 = $test_measure->Q3;
-    printf "Q3: %.3f\n", $test_q3;
+    my $test_measure = Reprof::Tools::Measure->new($num_outputs);
+    run_nn($ann, $test_set, $test_measure);
+    if ($test_measure->size == 1) {
+        printf "MSE: %.3f\n", $test_measure->mse;
+    }
+    else {
+        printf "Q3: %.3f L: %.3f H: %.3f E: %.3f\n", $test_measure->Q3, $test_measure->Q_i(0), $test_measure->Q_i(1), $test_measure->Q_i(2);
+    }
 
-    # print output for benchmark on train valid testsets
-    printf RESULT "%s %.5f %.5f %.5f\n", $epoch, $train_q3, $valid_q3, $test_q3;
+    # print output for benchmark on train crosstrain testsets
+    if ($train_measure->size == 1) {
+        printf RESULT "%s %.5f %.5f %.5f\n", $epoch, $train_measure->mse, $crosstrain_measure->mse, $test_measure->mse;
+    }
+    else {
+        printf RESULT "%s %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n", $epoch, $train_measure->Q3, $crosstrain_measure->Q3, $test_measure->Q3, $train_measure->Q_i(0), $crosstrain_measure->Q_i(0), $test_measure->Q_i(0), $train_measure->Q_i(1), $crosstrain_measure->Q_i(1), $test_measure->Q_i(1), $train_measure->Q_i(2), $crosstrain_measure->Q_i(2), $test_measure->Q_i(2);
+    }
 
     #--------------------------------------------------
-    # Save nn if validset reaches new maximum value
+    # Save nn if crosstrainset reaches new maximum value
     #-------------------------------------------------- 
-    if ($valid_q3 > $max_q3) {
+    if ($crosstrain_current > $max_val) {
         $ann->save($net_file);
-        $max_q3 = $valid_q3;
+        $max_val = $crosstrain_current;
         $decreasing_epochs = 0;
     }
     else {
@@ -181,49 +217,12 @@ foreach my $epoch (1 .. $max_epochs) {
     }
 
     if ($decreasing_epochs >= $max_decreasing_epochs) {
-        say "Finished after epoch $epoch because no increasing valid Q3 since $decreasing_epochs epochs";
+        say "Finished after epoch $epoch because no increasing crosstrain Q3 since $decreasing_epochs epochs";
         last;
     }
 }
 
 close RESULT;
-
-#--------------------------------------------------
-# SUBS
-#-------------------------------------------------- 
-#--------------------------------------------------
-# name:        train_nn
-# desc:        trains the network with the data
-# args:        fann object, ref to sets
-# return:      NA
-#-------------------------------------------------- 
-sub train_nn {
-    my ($nn, $set) = @_;
-
-    while (my $dp = $set->next_dp) {
-        $nn->reset_MSE;
-        $nn->train($dp->[1], $dp->[2]);
-    }
-}
-
-#--------------------------------------------------
-# name:        test_nn
-# desc:        tests the network with data
-# args:        fann object, ref to sets
-# return:      Reprof::Tools::Measure
-#-------------------------------------------------- 
-sub test_nn {
-    my ($nn, $set) = @_;
-    my $measure = Reprof::Tools::Measure->new($num_outputs);
-
-    while (my $dp = $set->next_dp) {
-        $nn->reset_MSE;
-        my $result = $nn->run($dp->[1]);
-        $measure->add($dp->[2], $result);
-    }
-
-    return $measure;
-}
 
 #--------------------------------------------------
 # name:        empty_array

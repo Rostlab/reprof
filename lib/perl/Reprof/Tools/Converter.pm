@@ -108,18 +108,19 @@ foreach my $num (0 .. 19) {
 #-------------------------------------------------- 
 sub convert_id {
         my $in = shift;
-        my $format = shift || 'pdb';
+        my $format = shift // 'pdb';
 
         my $result;
 	while ($in =~ m/$id_dict->{$format}/g) {
 		$result = $1;
 	}
-	return lc $result;
+
+    return $result;
 }
 
 sub convert_res {
     my $value = shift;
-    my $format = shift || 'oneletter';
+    my $format = shift // 'oneletter';
 
     if (ref $value) {
         return convert_res(get_max_array_pos($value), 'oneletter');
@@ -130,15 +131,15 @@ sub convert_res {
         return \@array;
     }
 
-    return $res_dict->{uc $value}{$format} || 'X';
+    return $res_dict->{uc $value}{$format} // 'X';
 }
 
 sub convert_ss {
     my $value = shift;
-    my $format = shift || 'oneletter';
+    my $format = shift // 'oneletter';
 
     if (ref $value) {
-        return convert_ss(get_max_array_pos($value), 'oneletter');
+        return convert_ss(get_max_array_pos($value), $format);
     }
     if ($format eq 'profile') {
         my @array = map 0, (1 .. 3);
@@ -149,11 +150,15 @@ sub convert_ss {
     return $ss_dict->{uc $value}{$format};
 }
 
-# DUMMY
 sub convert_acc {
-    my ($value, $format) = @_;
+    my ($value) = @_;
 
-    return $value;
+    my $acc = $value / 250;
+    if ($acc > 1.0) {
+        return 1;
+    }
+
+    return $acc;
 }
 
 1;
