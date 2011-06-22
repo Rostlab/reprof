@@ -16,7 +16,7 @@ use Reprof::Methods::Fann qw(run_nn);
 use Reprof::Methods::Jury qw(jury_sum jury_avg jury_majority);
 use AI::FANN;
 
-my $ssseqnet_file = "/mnt/project/reprof/data/nets/tseq.tr1.ct2.te3.w19.h240.lr0.01.lm0.1.net";
+my $ssseqnet_file = "/mnt/project/reprof/test.w17.net";
 my $ssstrucnet_file = "/mnt/project/reprof/data/nets/tstruc2.tr11.ct12.te13.w29.h185.lr0.01.lm0.1.net";
 
 #my $ssseqnet_file = "/mnt/project/reprof/data/nets/tssseq.tr2.ct3.te1.w17.h245.lr0.01.lm0.1.net";
@@ -52,28 +52,22 @@ GetOptions(
     'ext'        =>   \$ext_out
 );
 
-unless (defined $pssm_glob || defined $fasta_glob || -e $set_file) {
-    say join "\n",
-        "Usage:",
-        "$0 -pssm PSSM_FILEGLOB [-dssp]";
-    exit 0;
-}
 
 my $ss_available = 0;
 
 my $ssseq_set = Reprof::Tools::Set->new;
 my ($ssseqwin) = ($ssseqnet_file =~ m/\.w(\d+)\./);
-my ($ssstrucwin) = ($ssstrucnet_file =~ m/\.w(\d+)\./);
+#my ($ssstrucwin) = ($ssstrucnet_file =~ m/\.w(\d+)\./);
 
 my $ssseqnn = AI::FANN->new_from_file($ssseqnet_file);
-my $ssstrucnn = AI::FANN->new_from_file($ssstrucnet_file);
+#my $ssstrucnn = AI::FANN->new_from_file($ssstrucnet_file);
 
-my $accseq_set = Reprof::Tools::Set->new;
-my ($accseqwin) = ($accseqnet_file =~ m/\.w(\d+)\./);
-my ($accstrucwin) = ($accstrucnet_file =~ m/\.w(\d+)\./);
+#my $accseq_set = Reprof::Tools::Set->new;
+#my ($accseqwin) = ($accseqnet_file =~ m/\.w(\d+)\./);
+#my ($accstrucwin) = ($accstrucnet_file =~ m/\.w(\d+)\./);
 
-my $accseqnn = AI::FANN->new_from_file($accseqnet_file);
-my $accstrucnn = AI::FANN->new_from_file($accstrucnet_file);
+#my $accseqnn = AI::FANN->new_from_file($accseqnet_file);
+#my $accstrucnn = AI::FANN->new_from_file($accstrucnet_file);
 
 #--------------------------------------------------
 # input 
@@ -165,7 +159,7 @@ if (defined $pssm_glob) {
             push @$acc_outs, $accout;
 
             $ssseq_set->add($id, [], $feat, $ssout);
-            $accseq_set->add($id, [], $feat, $accout);
+#$accseq_set->add($id, [], $feat, $accout);
         }
     }
 }
@@ -180,6 +174,14 @@ elsif (defined $set_file) {
     # TODO
     # parse setfile if given 
     #-------------------------------------------------- 
+    my $set_parser = Reprof::Parser::Set->new($set_file);
+    $ssseq_set = $set_parser->get_set;
+    $ssseq_set->win($ssseqwin);
+
+    while (my $dp = $ssseq_set->next_dp) {
+        push @$descriptions, [$dp->[4], @{$dp->[0]}];
+        push @$ss_outs, $dp->[2];
+    }
 }
 
 #--------------------------------------------------
@@ -203,35 +205,35 @@ while (my $dp = $ssseq_set->next_dp) {
     ++$pos;
 }
 
-say "Running ssstructure nn";
-my $ssstruc_measure = Reprof::Tools::Measure->new(3);
-$ssstruc_set->win($ssstrucwin);
-my $ssstruc_results = run_nn($ssstrucnn, $ssstruc_set, $ssstruc_measure);
+#say "Running ssstructure nn";
+#my $ssstruc_measure = Reprof::Tools::Measure->new(3);
+#$ssstruc_set->win($ssstrucwin);
+#my $ssstruc_results = run_nn($ssstrucnn, $ssstruc_set, $ssstruc_measure);
 
 #--------------------------------------------------
 # accsequence nn 
 #-------------------------------------------------- 
-say "Running accsequence nn";
-my $accseq_measure = Reprof::Tools::Measure->new(1);
-$accseq_set->win($accseqwin);
-my $accseq_results = run_nn($accseqnn, $accseq_set, $accseq_measure);
+#say "Running accsequence nn";
+#my $accseq_measure = Reprof::Tools::Measure->new(1);
+#$accseq_set->win($accseqwin);
+#my $accseq_results = run_nn($accseqnn, $accseq_set, $accseq_measure);
 
 #--------------------------------------------------
 # accstructure nn 
 #-------------------------------------------------- 
-say "Creating accstructure nn input";
-my $accstruc_set = Reprof::Tools::Set->new;
-$pos = 0;
-while (my $dp = $accseq_set->next_dp) {
-    $accstruc_set->add($dp->[4], [], $accseq_results->[$pos], $dp->[2]);
+#say "Creating accstructure nn input";
+#my $accstruc_set = Reprof::Tools::Set->new;
+#$pos = 0;
+#while (my $dp = $accseq_set->next_dp) {
+#$accstruc_set->add($dp->[4], [], $accseq_results->[$pos], $dp->[2]);
+#
+#++$pos;
+#}
 
-    ++$pos;
-}
-
-say "Running accstructure nn";
-my $accstruc_measure = Reprof::Tools::Measure->new(1);
-$accstruc_set->win($accstrucwin);
-my $accstruc_results = run_nn($accstrucnn, $accstruc_set, $accstruc_measure);
+#say "Running accstructure nn";
+#my $accstruc_measure = Reprof::Tools::Measure->new(1);
+#$accstruc_set->win($accstrucwin);
+#my $accstruc_results = run_nn($accstrucnn, $accstruc_set, $accstruc_measure);
 #--------------------------------------------------
 # output 
 #-------------------------------------------------- 
@@ -250,24 +252,24 @@ foreach my $desc (@$descriptions) {
 
     # ss
     print "\t", join "\t", 
-          convert_ss($ssseq_results->[$pos]), 
-          convert_ss($ssstruc_results->[$pos]);
+          convert_ss($ssseq_results->[$pos]);
 
     # acc
-    printf "\t%.3f\t%.3f",
-          @{$accseq_results->[$pos]}, 
-          @{$accstruc_results->[$pos]};
+#printf "\t%.3f\t%.3f",
+#@{$accseq_results->[$pos]}, 
+#@{$accstruc_results->[$pos]};
 
     if (defined $dssp) {
         print "\t", join "\t", 
               convert_ss($ss_outs->[$pos]),
-              @{$acc_outs->[$pos]};
+#@{$acc_outs->[$pos]}
+              ;
     }
 
     if ($ext_out) {
     print "\t", join "\t", 
           (sprintf "%.1f\t%.1f\t%.1f", @{$ssseq_results->[$pos]}),
-          (sprintf "%.1f\t%.1f\t%.1f", @{$ssstruc_results->[$pos]});
+#(sprintf "%.1f\t%.1f\t%.1f", @{$ssstruc_results->[$pos]});
     }
 
     print "\n";
@@ -281,11 +283,11 @@ if (defined $dssp) {
                    $ssseq_measure->Q_i(0) * 100,
                    $ssseq_measure->Q_i(1) * 100,
                    $ssseq_measure->Q_i(2) * 100;
-            printf "#SSSTRUC Q3:%.1f QL:%.1f QH:%.1f QE:%.1f\n",
-                   $ssstruc_measure->Q3 * 100,
-                   $ssstruc_measure->Q_i(0) * 100,
-                   $ssstruc_measure->Q_i(1) * 100,
-                   $ssstruc_measure->Q_i(2) * 100;
-            printf "#ACCSEQ   E:%.3f\n", $accseq_measure->mse;
-            printf "#ACCSTRUC E:%.3f\n", $accstruc_measure->mse;
+#printf "#SSSTRUC Q3:%.1f QL:%.1f QH:%.1f QE:%.1f\n",
+#$ssstruc_measure->Q3 * 100,
+#$ssstruc_measure->Q_i(0) * 100,
+#$ssstruc_measure->Q_i(1) * 100,
+#$ssstruc_measure->Q_i(2) * 100;
+#printf "#ACCSEQ   E:%.3f\n", $accseq_measure->mse;
+#printf "#ACCSTRUC E:%.3f\n", $accstruc_measure->mse;
 }

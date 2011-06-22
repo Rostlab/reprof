@@ -16,7 +16,7 @@ $set->win($win);
 
 while (my $dp = $set->next_dp) {
 #print $dp->[2][0];
-print convert_ss($dp->[2], "num") / 2;
+print convert_ss($dp->[2], "num");
 
     my $num = 1;
     foreach my $p (@{$dp->[1]}) {
