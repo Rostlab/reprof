@@ -50,10 +50,12 @@ sub _parse {
         push @{$self->{_pos}}, $split[0];
         push @{$self->{_res}}, $split[1];
         my @raws = @split[2..21];
-        my @norms = map _normalize_pssm($_), @raws;
+        my @norms = map {_normalize_pssm($_)} @raws;
         push @{$self->{_raw_score}}, \@raws;
         push @{$self->{_norm_score}}, \@norms;
-        push @{$self->{_pc_score}}, [(@split)[22 .. 41]];
+        my @pcs = @split[22 .. 41];
+        my @pc_norms = map {$_ / 100} @pcs;
+        push @{$self->{_pc_score}}, \@pc_norms;
         push @{$self->{_info}}, $split[42];
         push @{$self->{_weight}}, $split[43];
         push @{$self->{_loc}}, ($split[0] / $length);

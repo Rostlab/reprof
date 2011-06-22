@@ -46,7 +46,7 @@ sub _parse {
                 my $acc = _parsefield($line, 36, 38);
 
                 push @{$self->{_chain}{$chain}{_pos}}, $resnr;
-                push @{$self->{_chain}{$chain}{_acc}}, convert_acc($acc);
+                push @{$self->{_chain}{$chain}{_acc}}, convert_acc($res, $acc);
                 push @{$self->{_chain}{$chain}{_ss}}, convert_ss($ss, "oneletter");
                 push @{$self->{_chain}{$chain}{_res}}, convert_res($res, "oneletter");
             }

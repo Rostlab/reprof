@@ -85,22 +85,27 @@ my @ss_oneletter = qw(L H E H H E);
 #-------------------------------------------------- 
 my $res_dict;
 
-my @res_oneletter = qw(A R N D C Q E G H I L K M F P S T W Y V);
+my @res_oneletter = qw(A R N D C E Q G H I L K M F P S T W Y V);
 my @res_threeletter = qw(ALA ARG ASN ASP CYS GLU GLN GLY HIS ILE LEU LYS MET PHE PRO SER THR TRP TYR VAL);
+my @acc_norm = (118.1, 256.0, 165.5, 158.7, 146.1, 186.2, 193.2, 88.1, 202.5, 181.0, 193.1, 225.8, 203.4, 222.8, 146.8, 129.8, 152.5, 266.3, 236.8, 164.5);
 
 foreach my $num (0 .. 19) {
     my $oneletter = $res_oneletter[$num];
     my $threeletter = $res_threeletter[$num];
+    my $acc = $acc_norm[$num];
 
     $res_dict->{$num}{oneletter} = $oneletter;
     $res_dict->{$num}{threeletter} = $threeletter;
     $res_dict->{$num}{num} = $num;
+    $res_dict->{$num}{acc} = $acc;
     $res_dict->{$oneletter}{num} = $num;
     $res_dict->{$oneletter}{threeletter} = $threeletter;
     $res_dict->{$oneletter}{oneletter} = $oneletter;
+    $res_dict->{$oneletter}{acc} = $acc;
     $res_dict->{$threeletter}{oneletter} = $oneletter;
     $res_dict->{$threeletter}{num} = $num;
     $res_dict->{$threeletter}{threeletter} = $threeletter;
+    $res_dict->{$threeletter}{acc} = $acc;
 }
 
 #--------------------------------------------------
@@ -151,14 +156,14 @@ sub convert_ss {
 }
 
 sub convert_acc {
-    my ($value) = @_;
+    my ($res, $value) = @_;
 
-    my $acc = $value / 250;
-    if ($acc > 1.0) {
-        return 1;
+    my $conv = convert_res($res, 'acc');
+    if ($conv eq "X") {
+        return 0;
     }
 
-    return $acc;
+    return $value / $conv;
 }
 
 1;
