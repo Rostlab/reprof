@@ -1,0 +1,40 @@
+option list /mnt/project/reprof/data/lists/333c.list
+option set /tmp/all.set
+option out /mnt/project/reprof/test/333c.fannset
+option format fann
+
+# local fasta inputs
+#input fasta residue 17
+#input fasta position 17
+#input fasta profile 17
+input fasta relative_position 17
+input fasta relative_position_reverse 17
+input fasta mass 17
+input fasta volume 17
+input fasta hydrophobicity 17
+input fasta cbeta 17
+input fasta hbreaker 17
+input fasta charge 17
+input fasta polarity 17
+input fasta in_sequence_bit 17
+
+# global fasta inputs
+input fasta aa_composition 1
+#input fasta length 1
+input fasta length_5state 1
+
+# local pssm inputs
+#input pssm raw 17
+input pssm normalized 17
+#input pssm percentage 17
+input pssm weight 17
+input pssm info 17
+ 17
+# local dssp inputs 17
+#output dssp ss 17
+#output dssp ss_numeric 17
+#output dssp ss_numeric_normalized 17
+output dssp ss_3state 1
+#output dssp acc_raw 17
+#output dssp acc_normalized 17
+#output dssp acc_10state 17
