@@ -44,14 +44,24 @@ sub require_module {
 my @inputs;
 my @outputs;
 
+my @added_feature_fhs;
+
 open CONFIG, $config_file or croak "Could not open $config_file\n";
 while (my $line = <CONFIG>) {
     my ($type, $format, $value, $window) = split /\s+/, $line;
 
     if ($type eq "input") {
+        if ($format eq "output") {
+            open my $fh, $value or croak "Could not open $value\n";
+            push @added_feature_fhs, $fh;
+        }
         push @inputs, [$format, $value, $window];
     }
-    if ($type eq "output") {
+    elsif ($type eq "output") {
+        if ($format eq "output") {
+            open my $fh, $value or croak "Could not open $value\n";
+            push @added_feature_fhs, $fh;
+        }
         push @outputs, [$format, $value, $window];
     }
     elsif ($type eq "option") {
@@ -95,6 +105,7 @@ my $num_inputs;
 my $num_outputs;
 my $header_written = 0;
 my $entry_count = 0;
+my $max_col = 0;
 
 open my $fh, ">", $out_file or croak "Could not open $out_file\n";
 open SET, $set_file or croak "Could not open $set_file\n";
@@ -108,11 +119,18 @@ while (my $line = <SET>) {
                 $index{$type}{$feature}{from} = $from;
                 $index{$type}{$feature}{to} = $to;
                 $index{$type}{$feature}{size} = $to - $from + 1;
+                if ($to > $max_col) {
+                    $max_col = $to + 1;
+                }
             }
         }
     }
 
     if ($split[0] eq "entry") {
+        unless ($header_read) {
+
+        }
+
         $header_read = 1;
         $current_entry = $split[1];
         if (exists $list{$current_entry}) {
@@ -122,9 +140,6 @@ while (my $line = <SET>) {
         }
     }
     elsif ($inside_entry && $split[0] eq "pos") {
-        my @tmp_inputs;
-        my @tmp_outputs;
-
         push @raw_data, \@split;
     }
     elsif ($split[0] eq "end") {

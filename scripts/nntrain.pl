@@ -99,7 +99,7 @@ sub iostring2arrays {
     return (\@inputs, \@outputs);
 }
 
-$|++;
+#$|++;
 say "parse data";
 print "train... ";
 my @train_data = parse_data($train_file);
@@ -143,8 +143,8 @@ if (-e $result_file) {
 
 my $training_file = "$out/nntrain.train";
 open TRAINING, ">>", $training_file  or die "Could not open $training_file\n";
-select TRAINING;
-$|++;
+#select TRAINING;
+#$|++;
 select STDOUT;
 
 
@@ -327,40 +327,40 @@ foreach my $epoch (1 .. $max_epochs) {
         $ann->reset_MSE;
         my $train_measure = NNtrain::Measure->new($num_outputs);
         my ($train_base) = fileparse($train_file);
-        open OUT, ">", "$out/$train_base.output" or croak "Could not open file\n";
+        #open OUT, ">", "$out/$train_base.output" or croak "Could not open file\n";
         foreach my $dp (@train_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
-            say OUT join " ", @$pred;
+            #say OUT join " ", @$pred;
             $train_measure->add($dp_data[1], $pred);
         }
-        close OUT;
+        #close OUT;
         $train_mse = $ann->MSE;
 
         $ann->reset_MSE;
         $ctrain_measure = NNtrain::Measure->new($num_outputs);
         my ($ctrain_base) = fileparse($ctrain_file);
-        open OUT, ">", "$out/$ctrain_base.output" or croak "Could not open file\n";
+        #open OUT, ">", "$out/$ctrain_base.output" or croak "Could not open file\n";
         foreach my $dp (@ctrain_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
-            say OUT join " ", @$pred;
+            #say OUT join " ", @$pred;
             $ctrain_measure->add($dp_data[1], $pred);
         }
-        close OUT;
+        #close OUT;
         $ctrain_mse = $ann->MSE;
 
         $ann->reset_MSE;
         my $test_measure = NNtrain::Measure->new($num_outputs);
         my ($test_base) = fileparse($test_file);
-        open OUT, ">", "$out/$test_base.output" or croak "Could not open file\n";
+        #open OUT, ">", "$out/$test_base.output" or croak "Could not open file\n";
         foreach my $dp (@test_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
-            say OUT join " ", @$pred;
+            #say OUT join " ", @$pred;
             $test_measure->add($dp_data[1], $pred);
         }
-        close OUT;
+        #close OUT;
         my $test_mse = $ann->MSE;
 
 
