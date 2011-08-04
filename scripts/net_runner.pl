@@ -4,6 +4,7 @@ use feature qw(say);
 use Getopt::Long;
 use Carp;
 use AI::FANN;
+use NNtrain::Measure;
 
 my $net_file;
 my $set_file;
@@ -12,7 +13,6 @@ my $out_file;
 GetOptions( 'net|n=s'    =>  \$net_file,
         'set|s=s'    =>  \$set_file,
         'out|o=s'    =>  \$out_file );
-
 
 sub parse_data {
     my ($file) = @_;
@@ -45,10 +45,18 @@ my $ann = AI::FANN->new_from_file($net_file);
 $ann->reset_MSE;
 
 open OUT, ">", $out_file or croak "Could not open $out_file\n";
+
+my @fakepoint = iostring2arrays($data[0]);
+my $fakeout = $fakepoint[1];
+my $measure = NNtrain::Measure->new(scalar @$fakeout);
+
 foreach my $dp (@data) {
     my @dp_data = iostring2arrays($dp);
     my $pred = $ann->test(@dp_data);
+    #$measure->add($dp_data[1], $pred);
     say OUT join " ", @$pred;
 }
 close OUT;
 
+
+say $measure->Qn;
