@@ -26,6 +26,7 @@ my $test_file;
 my $out;
 my $config_file;
 my $balanced = 0;
+my $max_time = -1;
 
 GetOptions(	
 			'config|c=s'	        => \$config_file
@@ -67,6 +68,9 @@ while (my $line = <CONFIG>) {
         elsif ($option eq "balanced") {
             $balanced = $value;
         }
+        elsif ($option eq "max_time") {
+            $max_time = $value;
+        }
     }
 }
 close CONFIG;
@@ -99,14 +103,12 @@ sub iostring2arrays {
     return (\@inputs, \@outputs);
 }
 
-#$|++;
+$|++;
+
 say "parse data";
 print "train... ";
 my @train_data = parse_data($train_file);
-print "ctrain... ";
-my @ctrain_data = parse_data($ctrain_file);
-print "test\n";
-my @test_data = parse_data($test_file);
+say "done...";
 
 my @first_dp = iostring2arrays($train_data[0]);
 
@@ -121,6 +123,8 @@ foreach my $layer (@hiddens) {
     $num_hiddens += $layer;
 }
 
+undef @train_data;
+
 my $max_Qn = -1;
 my $best_epoch = 0;
 my $boring_epochs = 0;
@@ -129,17 +133,6 @@ my $boring_epochs = 0;
 # Prepare output
 #-------------------------------------------------- 
 my $result_file = "$out/nntrain.result";
-if (-e $result_file) {
-    open FH, $result_file or die "Could not open $result_file\n";
-    my $line = <FH>;
-    close FH;
-    if ($line =~ m/^FINISHED/) {
-        croak "Training already finished, delete results to rerun";
-    }
-    elsif ($line =~ m/^TRAINING/) {
-        say "Resuming training";
-    }
-}
 
 my $training_file = "$out/nntrain.train";
 open TRAINING, ">>", $training_file  or die "Could not open $training_file\n";
@@ -153,139 +146,135 @@ select STDOUT;
 #-------------------------------------------------- 
 my $ann;
 my $nn_file = "$out/nntrain.model";
-if (-e $nn_file) {
-    $ann = AI::FANN->new_from_file($nn_file);
-    say "network loaded from file";
-}
-else {
-    my @layers;
-    push @layers, $num_inputs;
-    push @layers, @hiddens unless scalar @hiddens == 0;
-    push @layers, $num_outputs;
+my @layers;
+push @layers, $num_inputs;
+push @layers, @hiddens unless scalar @hiddens == 0;
+push @layers, $num_outputs;
 
-    $ann = AI::FANN->new_standard(@layers);
-    $ann->hidden_activation_function(FANN_SIGMOID);
-    $ann->output_activation_function(FANN_SIGMOID);
-    $ann->training_algorithm(FANN_TRAIN_INCREMENTAL);
-    $ann->train_error_function(FANN_ERRORFUNC_LINEAR);
-    $ann->train_stop_function(FANN_STOPFUNC_MSE);
-    $ann->learning_rate($learning_rate);
-    $ann->learning_momentum($learning_momentum);
+$ann = AI::FANN->new_standard(@layers);
+$ann->hidden_activation_function(FANN_SIGMOID);
+$ann->output_activation_function(FANN_SIGMOID);
+$ann->training_algorithm(FANN_TRAIN_INCREMENTAL);
+$ann->train_error_function(FANN_ERRORFUNC_LINEAR);
+$ann->train_stop_function(FANN_STOPFUNC_MSE);
+$ann->learning_rate($learning_rate);
+$ann->learning_momentum($learning_momentum);
 
-    say "created network ", join " ", @layers;
-}
+say "created network ", join " ", @layers;
 
 #--------------------------------------------------
 # prepare balancing
 #-------------------------------------------------- 
-my $min_train_class_size;
-my %grouped_train_data;
-if ($balanced) {
+sub balance {
+    my $ori_data = shift;
+    my $min_class_size;
+    my %grouped_data;
+    
     say "prepare balancing";
-    foreach my $dp (@train_data) {
-        push @{$grouped_train_data{$dp->[1]}}, $dp;
+
+    foreach my $dp (@$ori_data) {
+        push @{$grouped_data{$dp->[1]}}, $dp;
     }
-    while (my ($class, $data) = each %grouped_train_data) {
+    
+    while (my ($class, $data) = each %grouped_data) {
         my $size = scalar @$data;
         say "$class -> $size";
-        if (!defined $min_train_class_size) {
-            $min_train_class_size = $size;
+        if (!defined $min_class_size) {
+            $min_class_size = $size;
         }
-        elsif ($size < $min_train_class_size) {
-            $min_train_class_size = $size;
+        elsif ($size < $min_class_size) {
+            $min_class_size = $size;
         }
     }
-    say "min train class size: $min_train_class_size";
+
+    say "min train class size: $min_class_size";
+
+    my @balanced_data;
+    my @shuffled_data;
+
+    while (my ($class, $data) = each %grouped_data) {
+        my @shuffled_data = shuffle @$data;
+        my @cut_data = @shuffled_data[0 .. $min_class_size - 1];
+        push @balanced_data, @cut_data;
+    }
+
+    @shuffled_data = shuffle @balanced_data;
+
+    return \@shuffled_data;
 }
 
-my $min_ctrain_class_size;
-my %grouped_ctrain_data;
-if ($balanced) {
-    say "prepare balancing";
-    foreach my $dp (@ctrain_data) {
-        push @{$grouped_ctrain_data{$dp->[1]}}, $dp;
+sub load_data {
+    my $file = shift;
+
+    #--------------------------------------------------
+    # parsing, shuffling, balancing train data
+    #-------------------------------------------------- 
+    print "parsing...";
+    my @current_data = parse_data($file);
+    say "done";
+
+    print "shuffling/balancing... ";
+    my @processed_current_data;
+    if ($balanced) {
+        @processed_current_data = @{balance(\@current_data)};
     }
-    while (my ($class, $data) = each %grouped_ctrain_data) {
-        my $size = scalar @$data;
-        say "$class -> $size";
-        if (!defined $min_ctrain_class_size) {
-            $min_ctrain_class_size = $size;
-        }
-        elsif ($size < $min_ctrain_class_size) {
-            $min_ctrain_class_size = $size;
-        }
+    else {
+        @processed_current_data = shuffle @current_data;
     }
-    say "min ctrain class size: $min_ctrain_class_size";
+    say "done";
+
+    return \@processed_current_data;
 }
 
 #--------------------------------------------------
 # Loop through epochs 
 #-------------------------------------------------- 
 my $start_time = time;
-foreach my $epoch (1 .. $max_epochs) {
-    #--------------------------------------------------
-    # shuffling / balancing
-    #-------------------------------------------------- 
-    print "shuffling/balancing... ";
-    # train set;
-    my @balanced_train_data;
-    my @shuffled_train_data;
+my $epoch = 0;
+while (1) {
+    say "epoch " . ++$epoch;
+    my @processed_current_data;
 
-    if ($balanced) {
-        while (my ($class, $data) = each %grouped_train_data) {
-            my @shuffled_data = shuffle @$data;
-            my @cut_data = @shuffled_data[0 .. $min_train_class_size - 1];
-            push @balanced_train_data, @cut_data;
-        }
-
-        @shuffled_train_data = shuffle @balanced_train_data;
-    }
-    else {
-        @shuffled_train_data = shuffle @train_data; 
-    }
-
-    # ctrain set
-    my @balanced_ctrain_data;
-    my @shuffled_ctrain_data;
-
-    if ($balanced) {
-        while (my ($class, $data) = each %grouped_ctrain_data) {
-            my @shuffled_data = shuffle @$data;
-            my @cut_data = @shuffled_data[0 .. $min_ctrain_class_size - 1];
-            push @balanced_ctrain_data, @cut_data;
-        }
-
-        @shuffled_ctrain_data = shuffle @balanced_ctrain_data;
-    }
-    else {
-        @shuffled_ctrain_data = shuffle @ctrain_data; 
-    }
     #--------------------------------------------------
     # Training 
     #-------------------------------------------------- 
+    print "parsing...";
+    @processed_current_data = @{load_data($train_file)};
+    say "done";
+
     print "train... ";
     $ann->reset_MSE;
-    foreach my $dp (@shuffled_train_data) {
+    foreach my $dp (@processed_current_data) {
         my @dp_data = iostring2arrays($dp);
         $ann->train(@dp_data);
     }
     my $train_mse = $ann->MSE;
+    undef @processed_current_data;
+    say "done";
 
     #--------------------------------------------------
     # crosstraining
     #-------------------------------------------------- 
-
+    print "parsing...";
+    @processed_current_data = @{load_data($ctrain_file)};
+    say "done";
+    
     print "crosstrain... ";
     $ann->reset_MSE;
     my $ctrain_measure = NNtrain::Measure->new($num_outputs);
-    foreach my $dp (@shuffled_ctrain_data) {
+    foreach my $dp (@processed_current_data) {
         my @dp_data = iostring2arrays($dp);
         my $pred = $ann->test(@dp_data);
         $ctrain_measure->add($dp_data[1], $pred);
     }
     my $ctrain_mse = $ann->MSE;
-    say "!";
+    undef @processed_current_data;
+    say "done";
 
+    #--------------------------------------------------
+    # output 
+    #-------------------------------------------------- 
+    print "writing outputs...";
     say TRAINING "epoch $epoch";
     say TRAINING join " ", "time", (time - $start_time);
     say TRAINING join " ", "train_mse", ($train_mse);
@@ -294,6 +283,7 @@ foreach my $epoch (1 .. $max_epochs) {
     say TRAINING join " ", "ctrain_precisions", (map {sprintf "%.3f", $_*100} ($ctrain_measure->precisions));
     say TRAINING join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
     say TRAINING join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
+    say "done";
 
     #--------------------------------------------------
     # Save nn if ctrainset reaches new maximum value
@@ -315,53 +305,50 @@ foreach my $epoch (1 .. $max_epochs) {
         say RESULT join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
         close RESULT;
     }
-    else {
+    else { 
         $boring_epochs++;
     }
 
-    if ($boring_epochs >= $wait_epochs) {
-        say "finished, Qn not increasing anymore";
+    #--------------------------------------------------
+    # finish training 
+    #-------------------------------------------------- 
+    if ($boring_epochs >= $wait_epochs || $epoch > $max_epochs || ($max_time > 0 && time - $start_time < $max_time)) {
+        say "finishing training...";
 
         $ann = AI::FANN->new_from_file($nn_file);
 
         $ann->reset_MSE;
         my $train_measure = NNtrain::Measure->new($num_outputs);
-        my ($train_base) = fileparse($train_file);
-        #open OUT, ">", "$out/$train_base.output" or croak "Could not open file\n";
-        foreach my $dp (@train_data) {
+        @processed_current_data = @{load_data($train_file)};
+        foreach my $dp (@processed_current_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
-            #say OUT join " ", @$pred;
             $train_measure->add($dp_data[1], $pred);
         }
-        #close OUT;
         $train_mse = $ann->MSE;
+        undef @processed_current_data;
 
         $ann->reset_MSE;
         $ctrain_measure = NNtrain::Measure->new($num_outputs);
-        my ($ctrain_base) = fileparse($ctrain_file);
-        #open OUT, ">", "$out/$ctrain_base.output" or croak "Could not open file\n";
-        foreach my $dp (@ctrain_data) {
+        @processed_current_data = @{load_data($ctrain_file)};
+        foreach my $dp (@processed_current_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
-            #say OUT join " ", @$pred;
             $ctrain_measure->add($dp_data[1], $pred);
         }
-        #close OUT;
         $ctrain_mse = $ann->MSE;
+        undef @processed_current_data;
 
         $ann->reset_MSE;
         my $test_measure = NNtrain::Measure->new($num_outputs);
-        my ($test_base) = fileparse($test_file);
-        #open OUT, ">", "$out/$test_base.output" or croak "Could not open file\n";
-        foreach my $dp (@test_data) {
+        @processed_current_data = @{load_data($test_file)};
+        foreach my $dp (@processed_current_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
-            #say OUT join " ", @$pred;
             $test_measure->add($dp_data[1], $pred);
         }
-        #close OUT;
         my $test_mse = $ann->MSE;
+        undef @processed_current_data;
 
 
         open RESULT, ">", $result_file  or die "Could not open $result_file\n";
