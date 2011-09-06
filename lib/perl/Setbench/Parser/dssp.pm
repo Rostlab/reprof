@@ -210,7 +210,55 @@ sub acc_10state {
     return @result;
 }
 
+sub acc_3state {
+    my ($self, $chain) = @_;
+    
+    my @accs = $self->acc_normalized($chain);
+    my @result;
 
+    foreach my $acc (@accs) {
+        my @array = map {0} (1 .. 3);
+        if ($acc >= 36) {
+            $array[2] = 1;
+        }
+        elsif ($acc >= 9) {
+            $array[1] = 1;
+        }
+        else {
+            $array[0] = 1;
+        }
+        push @result, \@array;
+    }
+
+    return @result;
+}
+
+sub acc_2state {
+    my ($self, $chain) = @_;
+    
+    my @accs = $self->acc_normalized($chain);
+    my @result;
+
+    foreach my $acc (@accs) {
+        my @array = map {0} (1 .. 2);
+        if ($acc >= 16) {
+            $array[1] = 1;
+        }
+        else {
+            $array[0] = 1;
+        }
+        push @result, \@array;
+    }
+
+    return @result;
+}
+
+sub length {
+    my ($self, $chain) = @_;
+
+    my $length = scalar @{$self->{chain}{$chain}{ss}};   
+    return $length;
+}
 
 sub getchains {
     my $self = shift;

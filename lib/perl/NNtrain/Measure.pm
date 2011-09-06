@@ -46,6 +46,20 @@ sub size {
     return $self->[1];
 }
 
+sub num_points {
+    my ($self) = @_;
+    my $size = $self->[1];
+
+    my $sum = 0;
+    foreach my $i (0 .. $size - 1) {
+        foreach my $j (0 .. $size - 1) {
+            $sum += $self->[0][$i][$j];
+        }
+    }
+
+    return $sum;
+}
+
 sub Qn {
     # observed, predicted
     my ($self) = @_;

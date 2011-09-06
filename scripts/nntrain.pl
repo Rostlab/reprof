@@ -16,6 +16,7 @@ use NNtrain::Measure;
 use File::Basename;
 
 my $hiddens_opt;
+my $hiddens_frac;
 my $learning_rate;
 my $learning_momentum;
 my $max_epochs;
@@ -32,6 +33,7 @@ GetOptions(
 			'config|c=s'	        => \$config_file
 			);
 
+#$|++;
 
 open CONFIG, $config_file or croak "Could not open $config_file\n";
 while (my $line = <CONFIG>) {
@@ -40,6 +42,9 @@ while (my $line = <CONFIG>) {
     if ($type eq "option") {
         if ($option eq "hiddens") {
             $hiddens_opt = $value;
+        }
+        elsif ($option eq "hiddens_frac") {
+            $hiddens_frac = $value;
         }
         elsif ($option eq "learning_rate") {
             $learning_rate = $value;
@@ -103,27 +108,32 @@ sub iostring2arrays {
     return (\@inputs, \@outputs);
 }
 
-$|++;
-
-say "parse data";
-print "train... ";
+print "checking input size... ";
 my @train_data = parse_data($train_file);
-say "done...";
 
 my @first_dp = iostring2arrays($train_data[0]);
 
 #--------------------------------------------------
 # Helper variables
 #-------------------------------------------------- 
-my @hiddens = split /,/, $hiddens_opt;
 my $num_inputs = scalar @{$first_dp[0]};
 my $num_outputs = scalar @{$first_dp[1]};
 my $num_hiddens = 0;
-foreach my $layer (@hiddens) {
-    $num_hiddens += $layer;
+my @hiddens;
+
+if (defined $hiddens_frac) {
+    $num_hiddens = int ($hiddens_frac * ($num_inputs + $num_outputs));
+    push @hiddens, ($num_hiddens>1?$num_hiddens:1);
+}
+else {
+    @hiddens = split /,/, $hiddens_opt;
+    foreach my $layer (@hiddens) {
+        $num_hiddens += $layer;
+    }
 }
 
 undef @train_data;
+say "done...";
 
 my $max_Qn = -1;
 my $best_epoch = 0;
@@ -135,7 +145,7 @@ my $boring_epochs = 0;
 my $result_file = "$out/nntrain.result";
 
 my $training_file = "$out/nntrain.train";
-open TRAINING, ">>", $training_file  or die "Could not open $training_file\n";
+open TRAINING, ">", $training_file  or die "Could not open $training_file\n";
 #select TRAINING;
 #$|++;
 select STDOUT;
@@ -209,11 +219,8 @@ sub load_data {
     #--------------------------------------------------
     # parsing, shuffling, balancing train data
     #-------------------------------------------------- 
-    print "parsing...";
     my @current_data = parse_data($file);
-    say "done";
 
-    print "shuffling/balancing... ";
     my @processed_current_data;
     if ($balanced) {
         @processed_current_data = @{balance(\@current_data)};
@@ -221,7 +228,6 @@ sub load_data {
     else {
         @processed_current_data = shuffle @current_data;
     }
-    say "done";
 
     return \@processed_current_data;
 }
@@ -231,7 +237,7 @@ sub load_data {
 #-------------------------------------------------- 
 my $start_time = time;
 my $epoch = 0;
-while (1) {
+while (1 == 1) {
     say "epoch " . ++$epoch;
     my @processed_current_data;
 
@@ -277,6 +283,7 @@ while (1) {
     print "writing outputs...";
     say TRAINING "epoch $epoch";
     say TRAINING join " ", "time", (time - $start_time);
+    say TRAINING "hiddens $num_hiddens";
     say TRAINING join " ", "train_mse", ($train_mse);
     say TRAINING join " ", "ctrain_mse", ($ctrain_mse);
     say TRAINING join " ", "ctrain_qn", (map {sprintf "%.3f", $_*100} ($ctrain_measure->Qn));
@@ -297,6 +304,7 @@ while (1) {
         say RESULT "TRAINING";
         say RESULT "epoch $epoch";
         say RESULT join " ", "time", (time - $start_time);
+        say RESULT "hiddens $num_hiddens";
         say RESULT join " ", "train_mse", ($train_mse);
         say RESULT join " ", "ctrain_mse", ($ctrain_mse);
         say RESULT join " ", "ctrain_qn", (map {sprintf "%.3f", $_*100} ($ctrain_measure->Qn));
@@ -310,10 +318,14 @@ while (1) {
     }
 
     #--------------------------------------------------
-    # finish training 
+    # finish training if a max value is reached
     #-------------------------------------------------- 
-    if ($boring_epochs >= $wait_epochs || $epoch > $max_epochs || ($max_time > 0 && time - $start_time < $max_time)) {
-        say "finishing training...";
+    my $finished_boring = ($boring_epochs >= $wait_epochs ? 1 : 0);
+    my $finished_epochs = ($epoch > $max_epochs ? 1 : 0);
+    my $finished_time = (($max_time > 0 && time - $start_time > $max_time) ? 1 : 0);
+
+    if ($finished_boring || $finished_epochs || $finished_time) {
+        say "finishing, because: boring=$finished_boring epochs=$finished_epochs time=$finished_time";
 
         $ann = AI::FANN->new_from_file($nn_file);
 
@@ -355,7 +367,9 @@ while (1) {
         say RESULT "FINISHED";
         say RESULT "epoch $epoch";
         say RESULT "best_epoch $best_epoch";
-        say RESULT join " ", "time", (time - $start_time);
+        say RESULT join " ", "time until exit", (time - $start_time);
+        say RESULT "hiddens $num_hiddens";
+        say RESULT "boring=$finished_boring epochs=$finished_epochs time=$finished_time";
         say "";
 
         say RESULT join " ", "train_mse", ($train_mse);

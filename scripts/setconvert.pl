@@ -44,24 +44,14 @@ sub require_module {
 my @inputs;
 my @outputs;
 
-my @added_feature_fhs;
-
 open CONFIG, $config_file or croak "Could not open $config_file\n";
 while (my $line = <CONFIG>) {
     my ($type, $format, $value, $window) = split /\s+/, $line;
 
     if ($type eq "input") {
-        if ($format eq "output") {
-            open my $fh, $value or croak "Could not open $value\n";
-            push @added_feature_fhs, $fh;
-        }
         push @inputs, [$format, $value, $window];
     }
     elsif ($type eq "output") {
-        if ($format eq "output") {
-            open my $fh, $value or croak "Could not open $value\n";
-            push @added_feature_fhs, $fh;
-        }
         push @outputs, [$format, $value, $window];
     }
     elsif ($type eq "option") {
@@ -93,6 +83,22 @@ my %list = map {$_ => 1} @list;
 close LIST;
 
 #--------------------------------------------------
+# slurp outputs of other methods (if any) 
+#-------------------------------------------------- 
+my %output_features;
+foreach my $feat (@inputs, @outputs) {
+    if ($feat->[0] eq "output") {
+        my $file = $feat->[1];
+        open FEAT, "$file" or croak "Could not open $file\n";
+        my @data = <FEAT>;
+        chomp @data;
+        close FEAT;
+
+        $output_features{$file} = \@data;
+    }
+}
+
+#--------------------------------------------------
 # parse set-db
 #-------------------------------------------------- 
 my $header_read = 0;
@@ -105,7 +111,8 @@ my $num_inputs;
 my $num_outputs;
 my $header_written = 0;
 my $entry_count = 0;
-my $max_col = 0;
+my $count = 0;
+my $max_to = 0;
 
 open my $fh, ">", $out_file or croak "Could not open $out_file\n";
 open SET, $set_file or croak "Could not open $set_file\n";
@@ -119,18 +126,15 @@ while (my $line = <SET>) {
                 $index{$type}{$feature}{from} = $from;
                 $index{$type}{$feature}{to} = $to;
                 $index{$type}{$feature}{size} = $to - $from + 1;
-                if ($to > $max_col) {
-                    $max_col = $to + 1;
+
+                if ($to > $max_to) {
+                    $max_to = $to;
                 }
             }
         }
     }
 
     if ($split[0] eq "entry") {
-        unless ($header_read) {
-
-        }
-
         $header_read = 1;
         $current_entry = $split[1];
         if (exists $list{$current_entry}) {
@@ -140,7 +144,26 @@ while (my $line = <SET>) {
         }
     }
     elsif ($inside_entry && $split[0] eq "pos") {
+        foreach my $feat (@inputs, @outputs) {
+            if ($feat->[0] eq "output") {
+                my @more_raw_data = split " ", $output_features{$feat->[1]}->[$count];
+                
+                my $from = scalar @split;
+                push @split, @more_raw_data;
+                my $to = scalar @split - 1;
+
+                unless (exists $index{"output"}{$feat->[1]}) {
+                    $index{"output"}{$feat->[1]}{from} = $from;
+                    $index{"output"}{$feat->[1]}{to} = $to;
+                    $index{"output"}{$feat->[1]}{size} = $to - $from + 1;
+                }
+            }
+        }
         push @raw_data, \@split;
+        $count++;
+    }
+    elsif ($split[0] eq "pos") {
+        $count++;
     }
     elsif ($split[0] eq "end") {
         #--------------------------------------------------
@@ -205,7 +228,7 @@ while (my $line = <SET>) {
         }
 
         $inside_entry = 0;
-        @raw_data = ();
+        undef @raw_data;
     }
 
 }

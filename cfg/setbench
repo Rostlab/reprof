@@ -1,11 +1,17 @@
 # options
 option list /mnt/project/reprof/data/lists/all.list
-option out /tmp/all.set
+option out /tmp/reprof/all.set
 
 # source options
-source fasta reprof
-source dssp reprof
-source pssm reprof
+source fasta predictprotein
+source dssp rost_db
+source pssm predictprotein
+source psic predictprotein
+
+# local psic
+feature psic raw
+feature psic normalized
+feature psic numseq
 
 # local fasta features
 feature fasta residue

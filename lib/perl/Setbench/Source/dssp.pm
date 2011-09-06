@@ -1,6 +1,6 @@
 package Setbench::Source::dssp;
 
-sub reprof {
+sub rost_db {
     my ($self, $raw_id) = @_;
     my $dssp_dir = "/mnt/project/rost_db/data/dssp/";
 

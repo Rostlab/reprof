@@ -50,10 +50,12 @@ my @fakepoint = iostring2arrays($data[0]);
 my $fakeout = $fakepoint[1];
 my $measure = NNtrain::Measure->new(scalar @$fakeout);
 
+my $count = 1;
 foreach my $dp (@data) {
+    say $count++ if $count % 1000 == 0;
     my @dp_data = iostring2arrays($dp);
     my $pred = $ann->test(@dp_data);
-    #$measure->add($dp_data[1], $pred);
+    $measure->add($dp_data[1], $pred);
     say OUT join " ", @$pred;
 }
 close OUT;
