@@ -1,38 +1,11 @@
-#--------------------------------------------------
-# desc:     parser for (multiple) fasta files 
-#
-# author:   hoenigschmid@rostlab.org
-#-------------------------------------------------- 
-package Setbench::Parser::fasta;
+package Reprof::Parser::fasta;
 
 use strict;
 use feature qw(say);
 use Carp;
 use Data::Dumper;
+use Reprof::Converter qw(aa aa_features);
 
-my $aa_features = {    
-    'A'  =>  {'number' => 0, 'mass' => 0.109,    'volume' => 0.170,    'hydrophobicity' => 0.700,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'R'  =>  {'number' => 1, 'mass' => 0.767,    'volume' => 0.676,    'hydrophobicity' => 0.000,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 1,      'polarity' => 0},    
-    'N'  =>  {'number' => 2, 'mass' => 0.442,    'volume' => 0.322,    'hydrophobicity' => 0.111,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 1},
-    'D'  =>  {'number' => 3, 'mass' => 0.450,    'volume' => 0.304,    'hydrophobicity' => 0.111,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0,      'polarity' => 1},
-    'C'  =>  {'number' => 4, 'mass' => 0.357,    'volume' => 0.289,    'hydrophobicity' => 0.778,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'Q'  =>  {'number' => 5, 'mass' => 0.550,    'volume' => 0.499,    'hydrophobicity' => 0.111,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 1},
-    'E'  =>  {'number' => 6, 'mass' => 0.558,    'volume' => 0.467,    'hydrophobicity' => 0.111,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0,      'polarity' => 1},
-    'G'  =>  {'number' => 7, 'mass' => 0.000,    'volume' => 0.000,    'hydrophobicity' => 0.456,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'H'  =>  {'number' => 8, 'mass' => 0.620,    'volume' => 0.555,    'hydrophobicity' => 0.144,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 1,      'polarity' => 1},
-    'I'  =>  {'number' => 9, 'mass' => 0.434,    'volume' => 0.636,    'hydrophobicity' => 1.000,    'cbeta' => 1,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'L'  =>  {'number' => 10, 'mass' => 0.434,    'volume' => 0.636,    'hydrophobicity' => 0.922,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'K'  =>  {'number' => 11, 'mass' => 0.550,    'volume' => 0.647,    'hydrophobicity' => 0.067,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 1,      'polarity' => 1},
-    'M'  =>  {'number' => 12, 'mass' => 0.574,    'volume' => 0.613,    'hydrophobicity' => 0.711,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'F'  =>  {'number' => 13, 'mass' => 0.698,    'volume' => 0.774,    'hydrophobicity' => 0.811,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'P'  =>  {'number' => 14, 'mass' => 0.310,    'volume' => 0.314,    'hydrophobicity' => 0.322,    'cbeta' => 0,  'hbreaker' => 1,   'charge' => 0.5,    'polarity' => 0},
-    'S'  =>  {'number' => 15, 'mass' => 0.233,    'volume' => 0.172,    'hydrophobicity' => 0.411,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 1},
-    'T'  =>  {'number' => 16, 'mass' => 0.341,    'volume' => 0.334,    'hydrophobicity' => 0.422,    'cbeta' => 1,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 1},
-    'W'  =>  {'number' => 17, 'mass' => 1.000,    'volume' => 1.000,    'hydrophobicity' => 0.400,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'Y'  =>  {'number' => 18, 'mass' => 0.822,    'volume' => 0.796,    'hydrophobicity' => 0.356,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 1},
-    'V'  =>  {'number' => 19, 'mass' => 0.326,    'volume' => 0.476,    'hydrophobicity' => 0.967,    'cbeta' => 1,  'hbreaker' => 0,   'charge' => 0.5,    'polarity' => 0},
-    'X'  =>  {'number' => 20, 'mass' => 0,    'volume' => 0,    'hydrophobicity' => 0,    'cbeta' => 0,  'hbreaker' => 0,   'charge' => 0,    'polarity' => 0},
-};
 
 sub new {
     my ($class, $file) = @_;
@@ -45,6 +18,21 @@ sub new {
 
     bless $self, $class;
     $self->parse($file);
+    return $self;
+}
+
+sub new_sequence {
+    my ($class, $seq) = @_;
+
+    chomp $seq;
+    my @split = split //, $seq;
+    my $self = {
+        data => [@split],
+        header => undef,
+        length => scalar @split,
+    };
+
+    bless $self, $class;
     return $self;
 }
 
@@ -119,29 +107,67 @@ sub length {
     return map {$length} (1 .. $length);
 }
 
-sub length_5state {
+sub distanceN {
     my ($self, $id) = @_;
 
     my $length = $self->{length};
-    my @result;
+    my @distances;
+    foreach my $pre (0 .. $length - 1) {
+        my @current = (0, 0, 0, 0);
+        foreach my $i (1 .. 4) {
+            if ($pre >= 2 ** ($i - 1) * 10) {
+                $current[$i - 1] = 1;
+            }
+            else {
+                my $r = ($pre - 2 ** ($i - 2) * 10) / (2 ** ($i - 1) * 10);
+                $r = 0 if $r < 0;
+                $current[$i - 1] = $r;
+            }
+        }
+        push @distances, \@current;
+    }
 
-    if ($length >= 241) {
-        @result =  (1, 1, 1, 1);
+    return @distances;
+}
+
+sub distanceC {
+    my ($self, $id) = @_;
+
+    my $length = $self->{length};
+    my @distances;
+    foreach my $pre (1 .. $length) {
+        my $post = $length - $pre;
+        my @current = (0, 0, 0, 0);
+        foreach my $i (1 .. 4) {
+            if ($post >= 2 ** ($i - 1) * 10) {
+                $current[$i - 1] = 1;
+            }
+            else {
+                my $r = ($post - 2 ** ($i - 2) * 10) / (2 ** ($i - 1) * 10);
+                $r = 0 if $r < 0;
+                $current[$i - 1] = $r;
+            }
+        }
+        push @distances, \@current;
     }
-    elsif ($length >= 181) {
-        @result =  (1, 1, 1, 0.5);
-    }
-    elsif ($length >= 121) {
-        @result =  (1, 1, 0.5, 0);
-    }
-    elsif ($length >= 61) {
-        @result =  (1, 0.5, 0, 0);
-    }
-    elsif ($length >= 1) {
-        @result =  (0.5, 0, 0, 0);
-    }
-    else {
-        @result =  (0, 0, 0, 0);
+
+    return @distances;
+}
+
+sub length_4state {
+    my ($self, $id) = @_;
+
+    my $length = $self->{length};
+    my @result = (0, 0, 0, 0);
+    foreach my $i (1 .. 4) {
+        if ($length >= 2 ** ($i - 1) * 60) {
+            $result[$i - 1] = 1;
+        }
+        else {
+            my $r = ($length - 2 ** ($i - 2) * 60) / (2 ** ($i - 1) * 60);
+            $r = 0 if $r < 0;
+            $result[$i - 1] = $r;
+        }
     }
 
     return map {\@result} (1 .. $length);
@@ -155,11 +181,13 @@ sub profile {
     my @profiles;
 
     foreach my $residue (@residues) {
-        carp "Invalid residue $residue\n" unless exists $aa_features->{$residue};
+        carp "Invalid residue $residue\n" unless defined aa($residue);
 
-        my @tmp_profile = map {0} (0 .. 20);
-        my $array_pos = $aa_features->{$residue}{number};
-        $tmp_profile[$array_pos] = 1;
+        my @tmp_profile = map {0} (1 .. 20);
+        my $array_pos = aa_features($residue, "number");
+        if ($array_pos < scalar @tmp_profile) {
+            $tmp_profile[$array_pos] = 1;
+        }
 
         push @profiles, \@tmp_profile;
     }
@@ -174,9 +202,9 @@ sub aa_composition {
     my @composition = map {0} (0 .. 20);
 
     foreach my $residue (@residues) {
-        carp "Invalid residue $residue\n" unless exists $aa_features->{$residue};
+        carp "Invalid residue $residue\n" unless defined aa($residue);
 
-        $composition[$aa_features->{$residue}{number}]++;
+        $composition[aa_features($residue, "number")]++;
     }
 
     my $length = $self->{length};
@@ -194,9 +222,9 @@ sub feature {
     my @result;
 
     foreach my $residue (@residues) {
-        carp "Invalid residue $residue\n" unless exists $aa_features->{$residue};
+        carp "Invalid residue $residue\n" unless defined aa($residue);
 
-        push @result, $aa_features->{$residue}{$feature};
+        push @result, aa_features($residue, $feature);
     }
 
     return @result;

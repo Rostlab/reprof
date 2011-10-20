@@ -1,72 +1,10 @@
-package Setbench::Parser::dssp;
+package Reprof::Parser::dssp;
 
 use strict;
 use feature qw(say);
 use Carp;
 use Data::Dumper;
-
-my $ss_features = {
-    H => { number => 0, oneletter   => 'H' },
-    G => { number => 0, oneletter   => 'H' },
-    I => { number => 0, oneletter   => 'H' },
-    E => { number => 1, oneletter   => 'E' },
-    B => { number => 1, oneletter   => 'E' },
-    L => { number => 2, oneletter   => 'L' },
-    S => { number => 2, oneletter   => 'L' },
-    T => { number => 2, oneletter   => 'L' },
-    '' => { number => 2, oneletter   => 'L' },
-    ' ' => { number => 2, oneletter   => 'L' }
-};
-
-my %acc_norm = (
-    A => 106,  
-    B => 160,         # D or N
-    C => 135,  
-    D => 163, 
-    E => 194,
-    F => 197, 
-    G => 84, 
-    H => 184,
-    I => 169, 
-    K => 205, 
-    L => 164,
-    M => 188, 
-    N => 157, 
-    P => 136,
-    Q => 198, 
-    R => 248, 
-    S => 130,
-    T => 142, 
-    V => 142, 
-    W => 227,
-    X => 180,         # undetermined (deliberate)
-    Y => 222, 
-    Z => 196,         # E or Q
-    max=>248
-);
-
-my %as = (
-    A => 1,  
-    C => 1,  
-    D => 1, 
-    E => 1,
-    F => 1, 
-    G => 1, 
-    H => 1,
-    I => 1, 
-    K => 1, 
-    L => 1,
-    M => 1, 
-    N => 1, 
-    P => 1,
-    Q => 1, 
-    R => 1, 
-    S => 1,
-    T => 1, 
-    V => 1, 
-    W => 1,
-    Y => 1 
-);
+use Reprof::Converter qw(aa sec_features acc_norm acc_features);
 
 sub new {
     my ($class, $file) = @_;
@@ -101,12 +39,12 @@ sub parse {
             else {
                 my $chain = parsefield($line, 12, 12);# . $break;				
                 my $res = parsefield($line, 14, 14);
-                $res = "X" unless exists $as{$res};
-                my $ss  = parsefield($line, 17, 17);
+                $res = "X" unless defined aa($res);
+                my $sec  = parsefield($line, 17, 17);
                 my $acc = parsefield($line, 36, 38);
 
                 push @{$self->{chain}{$chain}{acc_raw}}, $acc;
-                push @{$self->{chain}{$chain}{ss}}, $ss_features->{$ss}{oneletter};
+                push @{$self->{chain}{$chain}{sec}}, sec_features($sec, "oneletter");
                 push @{$self->{chain}{$chain}{res}}, (uc $res);
             }
         }
@@ -118,45 +56,54 @@ sub parse {
     }
 }
 
-
-sub ss {
+sub res {
     my ($self, $chain) = @_;
 
-    return @{$self->{chain}{$chain}{ss}};
+    return @{$self->{chain}{$chain}{res}};
 }
 
-sub ss_numeric {
+sub sec {
     my ($self, $chain) = @_;
 
-    my @ss = @{$self->{chain}{$chain}{ss}};
+    return @{$self->{chain}{$chain}{sec}};
+}
+
+sub sec_numeric {
+    my ($self, $chain) = @_;
+
+    my @sec = @{$self->{chain}{$chain}{sec}};
     my @result;
-    foreach my $ss (@ss) {
-        push @result, $ss_features->{$ss}{number};
+    foreach my $sec (@sec) {
+        push @result, sec_features($sec, "number");
     }
 
     return @result;
 }
 
-sub ss_numeric_normalized {
+sub sec_numeric_normalized {
     my ($self, $chain) = @_;
 
-    my @ss = @{$self->{chain}{$chain}{ss}};
+    my @sec = @{$self->{chain}{$chain}{sec}};
     my @result;
-    foreach my $ss (@ss) {
-        push @result, ($ss_features->{$ss}{number} / 2);
+    foreach my $sec (@sec) {
+        push @result, (sec_features($sec, "number") / 2);
     }
 
     return @result;
 }
 
-sub ss_3state {
+sub sec_3state {
     my ($self, $chain) = @_;
+    
+    #say Dumper($self);
 
-    my @ss = @{$self->{chain}{$chain}{ss}};
+    #say $chain;
+    #say Dumper($self->{chain});
+    my @sec = @{$self->{chain}{$chain}{sec}};
     my @result;
-    foreach my $ss (@ss) {
+    foreach my $sec (@sec) {
         my @raw = map {0} (1 .. 3);
-        $raw[$ss_features->{$ss}{number}] = 1;
+        $raw[sec_features($sec, "number")] = 1;
         push @result, \@raw;
     }
 
@@ -177,7 +124,7 @@ sub acc_normalized {
 
     my @result;
     foreach my $iter (0 .. scalar @residues - 1) {
-        my $norm_div = $acc_norm{$residues[$iter]};
+        my $norm_div = acc_norm($residues[$iter]);
         if (! defined $norm_div) {
             say Dumper($self);
             say $residues[$iter];
@@ -256,11 +203,11 @@ sub acc_2state {
 sub length {
     my ($self, $chain) = @_;
 
-    my $length = scalar @{$self->{chain}{$chain}{ss}};   
+    my $length = scalar @{$self->{chain}{$chain}{sec}};   
     return $length;
 }
 
-sub getchains {
+sub get_chains {
     my $self = shift;
 
     return $self->{chains};

@@ -1,8 +1,9 @@
-package Setbench::Parser::psic;
+package Reprof::Parser::psic;
 
 use strict;
 use warnings;
 use Carp;
+use Reprof::Converter qw(normalize);
 
 sub new {
     my ($class, $file) = @_;
@@ -33,7 +34,7 @@ sub parse {
         my @split = split /\s+/, $line;
 
         my @raws = @split[1..20];
-        my @norms = map {normalize_psic($_)} @raws;
+        my @norms = map {normalize($_)} @raws;
         push @{$self->{raw}}, \@raws;
         push @{$self->{normalized}}, \@norms;
         push @{$self->{numseq}}, $split[21];
@@ -53,11 +54,6 @@ sub normalized {
 sub numseq {
     my $self = shift;
     return @{$self->{numseq}};
-}
-
-sub normalize_psic {
-    my $x = shift;
-    return 1.0 / (1.0 + exp(-$x));
 }
 
 1;

@@ -1,15 +1,14 @@
-package Setbench::Source::fasta;
+package Reprof::Source::fasta;
+use feature qw(say);
 
 sub predictprotein {
-    my ($self, $raw_id) = @_;
+    my ($self, $raw, $seq) = @_;
+    say $raw;
+    say $seq;
 
-    #--------------------------------------------------
-    # config 
-    #-------------------------------------------------- 
     my $target = "fasta";
-    my $fasta_file = "/mnt/project/reprof/data/fasta/$raw_id.fasta";
-
-    my ($file) = grep /$target/, (`ppc_fetch --seqfile=$fasta_file`);
+    my ($file) = grep /$target/, (`ppc_fetch --seq=$seq`);
+    chomp $file;
 
     return $file;
 }

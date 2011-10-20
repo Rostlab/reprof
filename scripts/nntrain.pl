@@ -12,7 +12,7 @@ use Data::Dumper;
 use Getopt::Long;
 use AI::FANN qw(:all);
 use List::Util qw(sum shuffle);
-use NNtrain::Measure;
+use Reprof::Measure;
 use File::Basename;
 
 my $hiddens_opt;
@@ -26,7 +26,8 @@ my $ctrain_file;
 my $test_file;
 my $out;
 my $config_file;
-my $balanced = 0;
+my $balanced_train = 0;
+my $balanced_ctrain = 0;
 my $max_time = -1;
 
 GetOptions(	
@@ -70,8 +71,11 @@ while (my $line = <CONFIG>) {
         elsif ($option eq "out") {
             $out = $value;
         }
-        elsif ($option eq "balanced") {
-            $balanced = $value;
+        elsif ($option eq "balanced_train") {
+            $balanced_train = $value;
+        }
+        elsif ($option eq "balanced_ctrain") {
+            $balanced_ctrain = $value;
         }
         elsif ($option eq "max_time") {
             $max_time = $value;
@@ -177,7 +181,7 @@ say "created network ", join " ", @layers;
 #-------------------------------------------------- 
 sub balance {
     my $ori_data = shift;
-    my $min_class_size;
+    my $max_class_size;
     my %grouped_data;
     
     say "prepare balancing";
@@ -189,32 +193,35 @@ sub balance {
     while (my ($class, $data) = each %grouped_data) {
         my $size = scalar @$data;
         say "$class -> $size";
-        if (!defined $min_class_size) {
-            $min_class_size = $size;
+        if (!defined $max_class_size) {
+            $max_class_size = $size;
         }
-        elsif ($size < $min_class_size) {
-            $min_class_size = $size;
+        elsif ($size > $max_class_size) {
+            $max_class_size = $size;
         }
     }
 
-    say "min train class size: $min_class_size";
+    say "max train class size: $max_class_size";
 
     my @balanced_data;
-    my @shuffled_data;
 
     while (my ($class, $data) = each %grouped_data) {
         my @shuffled_data = shuffle @$data;
-        my @cut_data = @shuffled_data[0 .. $min_class_size - 1];
-        push @balanced_data, @cut_data;
+        my $data_size = scalar @shuffled_data;
+        foreach my $i (0 .. $max_class_size - 1) {
+            my $j = $i % ($data_size);
+            push @balanced_data, $shuffled_data[$j];
+        }
     }
 
-    @shuffled_data = shuffle @balanced_data;
+    my @shuffled_data = shuffle @balanced_data;
 
     return \@shuffled_data;
 }
 
 sub load_data {
     my $file = shift;
+    my $balanced = shift;
 
     #--------------------------------------------------
     # parsing, shuffling, balancing train data
@@ -245,7 +252,7 @@ while (1 == 1) {
     # Training 
     #-------------------------------------------------- 
     print "parsing...";
-    @processed_current_data = @{load_data($train_file)};
+    @processed_current_data = @{load_data($train_file, $balanced_train)};
     say "done";
 
     print "train... ";
@@ -262,12 +269,12 @@ while (1 == 1) {
     # crosstraining
     #-------------------------------------------------- 
     print "parsing...";
-    @processed_current_data = @{load_data($ctrain_file)};
+    @processed_current_data = @{load_data($ctrain_file, $balanced_ctrain)};
     say "done";
     
     print "crosstrain... ";
     $ann->reset_MSE;
-    my $ctrain_measure = NNtrain::Measure->new($num_outputs);
+    my $ctrain_measure = Reprof::Measure->new($num_outputs);
     foreach my $dp (@processed_current_data) {
         my @dp_data = iostring2arrays($dp);
         my $pred = $ann->test(@dp_data);
@@ -330,8 +337,8 @@ while (1 == 1) {
         $ann = AI::FANN->new_from_file($nn_file);
 
         $ann->reset_MSE;
-        my $train_measure = NNtrain::Measure->new($num_outputs);
-        @processed_current_data = @{load_data($train_file)};
+        my $train_measure = Reprof::Measure->new($num_outputs);
+        @processed_current_data = @{load_data($train_file, 0)};
         foreach my $dp (@processed_current_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
@@ -341,8 +348,8 @@ while (1 == 1) {
         undef @processed_current_data;
 
         $ann->reset_MSE;
-        $ctrain_measure = NNtrain::Measure->new($num_outputs);
-        @processed_current_data = @{load_data($ctrain_file)};
+        $ctrain_measure = Reprof::Measure->new($num_outputs);
+        @processed_current_data = @{load_data($ctrain_file, 0)};
         foreach my $dp (@processed_current_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);
@@ -352,8 +359,8 @@ while (1 == 1) {
         undef @processed_current_data;
 
         $ann->reset_MSE;
-        my $test_measure = NNtrain::Measure->new($num_outputs);
-        @processed_current_data = @{load_data($test_file)};
+        my $test_measure = Reprof::Measure->new($num_outputs);
+        @processed_current_data = @{load_data($test_file, 0)};
         foreach my $dp (@processed_current_data) {
             my @dp_data = iostring2arrays($dp);
             my $pred = $ann->test(@dp_data);

@@ -1,9 +1,10 @@
-package Setbench::Parser::pssm;
+package Reprof::Parser::blastPsiMat;
 
 use strict;
 use warnings;
 use feature qw(say);
 use Carp;
+use Reprof::Converter qw(normalize);
 
 sub new {
     my ($class, $file) = @_;
@@ -36,7 +37,7 @@ sub parse {
         my @split = split /\s+/, $line;
 
         my @raws = @split[2..21];
-        my @norms = map {normalize_pssm($_)} @raws;
+        my @norms = map {normalize($_)} @raws;
         push @{$self->{raw}}, \@raws;
         push @{$self->{normalized}}, \@norms;
         my @pcs = @split[22 .. 41];
@@ -70,16 +71,6 @@ sub info {
 sub weight {
     my $self = shift;
     return @{$self->{weight}};
-}
-
-#--------------------------------------------------
-# name:        normalize_pssm
-# args:        pssm value
-# return:      normalized pssm value
-#-------------------------------------------------- 
-sub normalize_pssm {
-    my $x = shift;
-    return 1.0 / (1.0 + exp(-$x));
 }
 
 1;

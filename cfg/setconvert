@@ -21,14 +21,14 @@ input fasta in_sequence_bit 17
 # global fasta inputs
 input fasta aa_composition 1
 #input fasta length 1
-input fasta length_5state 1
+input fasta length_4state 1
 
-# local pssm inputs
-#input pssm raw 17
-input pssm normalized 17
-#input pssm percentage 17
-input pssm weight 17
-input pssm info 17
+# local blastPsiMat inputs
+#input blastPsiMat raw 17
+input blastPsiMat normalized 17
+#input blastPsiMat percentage 17
+input blastPsiMat weight 17
+input blastPsiMat info 17
  17
 # local dssp inputs 17
 #output dssp ss 17

@@ -66,7 +66,7 @@ while (my $line = <CONFIG>) {
         }
         elsif ($format eq "format") {
             $out_format = $value;
-            $writer = "Setbench::Writer::$out_format";
+            $writer = "Reprof::Writer::$out_format";
             require_module($writer);
         } }
 }
@@ -77,11 +77,16 @@ close CONFIG;
 # list
 #-------------------------------------------------- 
 open LIST, $list_file or croak "Could not open $list_file\n";
-my @list = <LIST>;
-chomp @list;
-my %list = map {$_ => 1} @list;
+my %list;
+while (my $header = <LIST>) {
+    my $seq = <LIST>;
+    chomp $header;
+    my $id = substr $header, 1;
+    $list{$id} = 1;
+}
 close LIST;
 
+say scalar keys %list;
 #--------------------------------------------------
 # slurp outputs of other methods (if any) 
 #-------------------------------------------------- 

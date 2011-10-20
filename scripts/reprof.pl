@@ -5,9 +5,9 @@ use Carp;
 use Getopt::Long;
 use List::Util qw(sum);
 
-use Setbench::Parser::fasta;
-use Setbench::Parser::pssm;
-use Setbench::Parser::psic;
+use Reprof::Parser::fasta;
+use Reprof::Parser::blastPsiMat;
+use Reprof::Parser::psic;
 use AI::FANN;
 
 #--------------------------------------------------
@@ -25,18 +25,18 @@ use constant {
 # get parameters 
 #-------------------------------------------------- 
 my $fasta_file;
-my $pssm_file;
+my $blastPsiMat_file;
 my $psic_file;
 
 #config direcory (basepath for the networks and features)
 my $config_dir = "/mnt/project/reprof/cfg/reprof/";
 my $out_file;
-my $nn_filename         = "reprof.model";
-my $features_filename   = "reprof.features";
+my $nn_filename         = "model";
+my $features_filename   = "features";
 
 GetOptions(
     'fasta|f=s'         => \$fasta_file,
-    'blastPsiMat|b=s'   => \$pssm_file,
+    'blastPsiMat|b=s'   => \$blastPsiMat_file,
     'psic|p=s'          => \$psic_file,
 
     'out|o=s'           => \$out_file,
@@ -46,7 +46,7 @@ GetOptions(
 #--------------------------------------------------
 # print usage if not enough parameters
 #-------------------------------------------------- 
-if (!defined $fasta_file || !defined $pssm_file || !defined $psic_file) {
+if (!-e $fasta_file || !-e $blastPsiMat_file || !-e $psic_file) {
     die "rtfc...\n";
 }
 
@@ -72,7 +72,7 @@ my $struc_unbalanced_seq_unbalanced = ["$config_dir/precise/ss/struc/unbalanced/
 my $struc_unbalanced_seq_balanced   = ["$config_dir/precise/ss/struc/unbalanced/seq_balanced/", undef, [], []];
 my $struc_balanced_seq_unbalanced   = ["$config_dir/precise/ss/struc/balanced/seq_unbalanced/", undef, [], []];
 my $struc_balanced_seq_balanced     = ["$config_dir/precise/ss/struc/balanced/seq_balanced/", undef, [], []];
-#my $ss_final                        = ["$config_dir/precise/ss/final/", undef, [], []];
+#my $sec_final                        = ["$config_dir/precise/ss/final/", undef, [], []];
 
 my $all_nets = [
     $acc_pre, 
@@ -83,7 +83,7 @@ my $all_nets = [
     $struc_unbalanced_seq_balanced, 
     $struc_balanced_seq_unbalanced, 
     $struc_balanced_seq_balanced,
-    #$ss_final,
+    #$sec_final,
 ];
 
 #--------------------------------------------------
@@ -98,8 +98,8 @@ foreach my $net (@$all_nets) {
 
     my @features;
     foreach my $line (@content) {
-        my ($source, $feature, $window) = split /\s+/, $line;
-        if (defined $window) {
+        my ($type, $source, $feature, $window) = split /\s+/, $line;
+        if (defined $window && $type eq "input") {
             push @features, [$source, $feature, $window];
         }
     }
@@ -118,16 +118,16 @@ $struc_unbalanced_seq_unbalanced->[NN]= AI::FANN->new_from_file("$struc_unbalanc
 $struc_unbalanced_seq_balanced->[NN]  = AI::FANN->new_from_file("$struc_unbalanced_seq_balanced->[PATH]/$nn_filename");
 $struc_balanced_seq_unbalanced->[NN]  = AI::FANN->new_from_file("$struc_balanced_seq_unbalanced->[PATH]/$nn_filename");
 $struc_balanced_seq_balanced->[NN]    = AI::FANN->new_from_file("$struc_balanced_seq_balanced->[PATH]/$nn_filename");
-#$ss_final->[NN]                       = AI::FANN->new_from_file("$ss_final->[PATH]/$nn_filename");
+#$sec_final->[NN]                       = AI::FANN->new_from_file("$sec_final->[PATH]/$nn_filename");
 
 
 #--------------------------------------------------
 # parse files 
 #-------------------------------------------------- 
 my %parser = (
-    fasta   => Setbench::Parser::fasta->new($fasta_file),
-    pssm    => Setbench::Parser::pssm->new($pssm_file),
-    psic    => Setbench::Parser::psic->new($psic_file),
+    fasta   => Reprof::Parser::fasta->new($fasta_file),
+    blastPsiMat    => Reprof::Parser::blastPsiMat->new($blastPsiMat_file),
+    psic    => Reprof::Parser::psic->new($psic_file),
 );
 my $chain_length = ($parser{fasta}->length)[0];
 
@@ -277,7 +277,7 @@ foreach my $row (0 .. $chain_length - 1) {
 }
 
 #--------------------------------------------------
-# fourth layer - acc/ss combination
+# fourth layer - acc/sec combination
 #-------------------------------------------------- 
 
 ### TODO ###
@@ -285,7 +285,7 @@ foreach my $row (0 .. $chain_length - 1) {
 #--------------------------------------------------
 # output 
 #-------------------------------------------------- 
-my $ss_converter = {
+my $sec_converter = {
     H => { number => 0, oneletter   => 'H' },
     E => { number => 1, oneletter   => 'E' },
     L => { number => 2, oneletter   => 'L' },
@@ -344,11 +344,11 @@ sub acc_rel2two {
     }
 }
 
-sub ss_three2one {
+sub sec_three2one {
     my ($array) = @_;
 
     my $mpos = max_pos $array;
-    return $ss_converter->{$mpos}->{oneletter};
+    return $sec_converter->{$mpos}->{oneletter};
 
 }
 
@@ -372,15 +372,15 @@ my $nos = [1 .. $chain_length];
 my @res_tmp = $parser{fasta}->residue;
 my $res = \@res_tmp;
 
-my $ss_raw = $jury;
-my $ss_one = [];
-my $ss_reli = [];
-my $ss_u = [];
-my $ss_b = [];
-my $ss_uu = [];
-my $ss_ub = [];
-my $ss_bu = [];
-my $ss_bb = [];
+my $sec_raw = $jury;
+my $sec_one = [];
+my $sec_reli = [];
+my $sec_u = [];
+my $sec_b = [];
+my $sec_uu = [];
+my $sec_ub = [];
+my $sec_bu = [];
+my $sec_bb = [];
 
 my $acc10_raw = $acc_pre->[OUTPUTS];
 my $acc_rel = [];
@@ -390,17 +390,17 @@ my $acc10_reli = [];
 
 foreach my $row (0 .. $chain_length - 1) {
     #--------------------------------------------------
-    # ss 
+    # sec 
     #-------------------------------------------------- 
-    my $ss = $ss_raw->[$row];
-    push @$ss_one, ss_three2one $ss;
-    push @$ss_reli, reliability $ss;
-    push @$ss_u, ss_three2one $seq_unbalanced->[OUTPUTS]->[$row];
-    push @$ss_b, ss_three2one $seq_balanced->[OUTPUTS]->[$row];
-    push @$ss_uu, ss_three2one $struc_unbalanced_seq_unbalanced->[OUTPUTS]->[$row];
-    push @$ss_ub, ss_three2one $struc_unbalanced_seq_balanced->[OUTPUTS]->[$row];
-    push @$ss_bu, ss_three2one $struc_balanced_seq_unbalanced->[OUTPUTS]->[$row];
-    push @$ss_bb, ss_three2one $struc_balanced_seq_balanced->[OUTPUTS]->[$row];
+    my $sec = $sec_raw->[$row];
+    push @$sec_one, sec_three2one $sec;
+    push @$sec_reli, reliability $sec;
+    push @$sec_u, sec_three2one $seq_unbalanced->[OUTPUTS]->[$row];
+    push @$sec_b, sec_three2one $seq_balanced->[OUTPUTS]->[$row];
+    push @$sec_uu, sec_three2one $struc_unbalanced_seq_unbalanced->[OUTPUTS]->[$row];
+    push @$sec_ub, sec_three2one $struc_unbalanced_seq_balanced->[OUTPUTS]->[$row];
+    push @$sec_bu, sec_three2one $struc_balanced_seq_unbalanced->[OUTPUTS]->[$row];
+    push @$sec_bb, sec_three2one $struc_balanced_seq_balanced->[OUTPUTS]->[$row];
 
     #--------------------------------------------------
     # acc 
@@ -469,6 +469,6 @@ open FH, ">", $out_file or croak "Could not open $out_file\n";
 say FH join "\n", @header;
 say FH join "\t", @columns;
 foreach my $row (0 .. $chain_length - 1) {
-    say FH join "\t" , $nos->[$row] , $res->[$row] , $ss_one->[$row] , $ss_reli->[$row] , $ss_u->[$row] , $ss_b->[$row] , $ss_uu->[$row] , $ss_ub->[$row] , $ss_bu->[$row] , $ss_bb->[$row] , $acc_rel->[$row] , $acc10_reli->[$row] , $acc3->[$row] , $acc2->[$row];
+    say FH join "\t" , $nos->[$row] , $res->[$row] , $sec_one->[$row] , $sec_reli->[$row] , $sec_u->[$row] , $sec_b->[$row] , $sec_uu->[$row] , $sec_ub->[$row] , $sec_bu->[$row] , $sec_bb->[$row] , $acc_rel->[$row] , $acc10_reli->[$row] , $acc3->[$row] , $acc2->[$row];
 }
 close FH;

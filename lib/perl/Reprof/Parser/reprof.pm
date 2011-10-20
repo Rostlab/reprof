@@ -1,4 +1,4 @@
-package Reprof::Parser::bind;
+package Reprof::Parser::reprof;
 
 use strict;
 use feature qw(say);
@@ -56,6 +56,12 @@ sub PHEL_3state {
     }
 
     return @result;
+}
+
+sub RI_S {
+    my ($self) = @_;
+
+    return @{$self->{RI_S}};
 }
 
 sub PREL_10state {

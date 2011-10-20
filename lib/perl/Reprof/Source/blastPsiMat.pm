@@ -1,16 +1,11 @@
-package Setbench::Source::pssm;
-
+package Reprof::Source::blastPsiMat;
 
 sub predictprotein {
-    my ($self, $raw_id) = @_;
+    my ($self, $raw, $seq) = @_;
 
-    #--------------------------------------------------
-    # config 
-    #-------------------------------------------------- 
     my $target = "blastPsiMat";
-    my $fasta_file = "/mnt/project/reprof/data/fasta/$raw_id.fasta";
-
-    my ($file) = grep /$target/, (`ppc_fetch --seqfile=$fasta_file`);
+    my ($file) = grep /$target/, (`ppc_fetch --seq=$seq`);
+    chomp $file;
 
     return $file;
 }

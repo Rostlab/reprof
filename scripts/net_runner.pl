@@ -4,7 +4,7 @@ use feature qw(say);
 use Getopt::Long;
 use Carp;
 use AI::FANN;
-use NNtrain::Measure;
+use Reprof::Measure;
 
 my $net_file;
 my $set_file;
@@ -48,7 +48,7 @@ open OUT, ">", $out_file or croak "Could not open $out_file\n";
 
 my @fakepoint = iostring2arrays($data[0]);
 my $fakeout = $fakepoint[1];
-my $measure = NNtrain::Measure->new(scalar @$fakeout);
+my $measure = Reprof::Measure->new(scalar @$fakeout);
 
 my $count = 1;
 foreach my $dp (@data) {

@@ -1,5 +1,4 @@
-package Reprof::Source::profRdb;
-
+package Reprof::Source::reprof;
 
 sub predictprotein {
     my ($self, $raw, $seq) = @_;
@@ -9,6 +8,13 @@ sub predictprotein {
     chomp $file;
 
     return $file;
+}
+
+
+sub reprof {
+    my ($self, $raw, $seq) = @_;
+
+    return "/mnt/project/reprof/data/reprof/$raw.reprof";
 }
 
 1;

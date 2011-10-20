@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #--------------------------------------------------
-# desc:     parse files supported by the Setbench 
+# desc:     parse files supported by the Reprof 
 #           library to create sets for machine
 #           learning
 #
@@ -51,9 +51,9 @@ while (my $line = <CONFIG>) {
 
     
     if ($type eq "feature") {
-        my $source_module = "Setbench::Source::$format";
+        my $source_module = "Reprof::Source::$format";
         require_module($source_module);
-        my $parser_module = "Setbench::Parser::$format";
+        my $parser_module = "Reprof::Parser::$format";
         require_module($parser_module);
 
         $formats{$format} = 1;
@@ -63,7 +63,7 @@ while (my $line = <CONFIG>) {
         $source_actions{$format} = $value;
     }
     elsif ($type eq "option") {
-        if ($format eq "list") {
+        if ($format eq "fasta") {
             $list_file = $value;
         }
         elsif ($format eq "out") {
@@ -78,8 +78,16 @@ close CONFIG;
 # list
 #-------------------------------------------------- 
 open LIST, $list_file or croak "Could not open $list_file\n";
-my @list = <LIST>;
-chomp @list;
+my @list;
+my %id2sequence;
+while (my $header = <LIST>) {
+    chomp $header;
+    my $id = substr $header, 1;
+    my $sequence = <LIST>;
+    chomp $sequence;
+    push @list, $id;
+    $id2sequence{$id} = $sequence;
+}
 close LIST;
 
 #--------------------------------------------------
@@ -96,16 +104,18 @@ my %parser_args;
 my $count = 0;
 my $header_written = 0;
 foreach my $entry (@list) {
+    my $sequence = $id2sequence{$entry};
+    #say $sequence;
     say "$count of ".(scalar @list) if scalar ++$count % 10 == 0;
     #--------------------------------------------------
     # parse needed files
     #-------------------------------------------------- 
     foreach my $format (keys %formats) {
-        my $source_module = "Setbench::Source::$format";
+        my $source_module = "Reprof::Source::$format";
         my $action = $source_actions{$format};
-        my @source_results = $source_module->$action($entry);
+        my @source_results = $source_module->$action($entry, $sequence);
 
-        my $parser_module = "Setbench::Parser::$format";
+        my $parser_module = "Reprof::Parser::$format";
         my $file = shift @source_results;
         $parsers{$format} = $parser_module->new($file);
 

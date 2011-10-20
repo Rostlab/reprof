@@ -1,50 +1,52 @@
 # options
-option list /mnt/project/reprof/data/lists/all.list
-option out /tmp/reprof/all.set
+option fasta /mnt/project/reprof/data/fasta_multi/standard.fasta
+option out /mnt/project/reprof/data/sets/standard.set
 
 # source options
 source fasta predictprotein
 source dssp rost_db
-source pssm predictprotein
-source psic predictprotein
+source blastPsiMat predictprotein
+#source psic predictprotein
 
 # local psic
-feature psic raw
-feature psic normalized
-feature psic numseq
+# feature psic raw
+# feature psic normalized
+# feature psic numseq
 
 # local fasta features
-feature fasta residue
-feature fasta position
+#feature fasta residue
+#feature fasta position
 feature fasta profile
-feature fasta relative_position
-feature fasta relative_position_reverse
-feature fasta mass
-feature fasta volume
-feature fasta hydrophobicity
-feature fasta cbeta
-feature fasta hbreaker
-feature fasta charge
-feature fasta polarity
+#feature fasta relative_position
+#feature fasta relative_position_reverse
+#feature fasta mass
+#feature fasta volume
+#feature fasta hydrophobicity
+#feature fasta cbeta
+#feature fasta hbreaker
+#feature fasta charge
+#feature fasta polarity
 feature fasta in_sequence_bit
 
 # global fasta features
 feature fasta aa_composition
-feature fasta length
-feature fasta length_5state
+#feature fasta length
+feature fasta length_4state
+feature fasta distanceN
+feature fasta distanceC
 
-# local pssm features
-feature pssm raw
-feature pssm normalized
-feature pssm percentage
-feature pssm weight
-feature pssm info
+# local blastPsiMat features
+#feature blastPsiMat raw
+feature blastPsiMat normalized
+#feature blastPsiMat percentage
+feature blastPsiMat weight
+feature blastPsiMat info
 
 # local dssp features
-feature dssp ss
-feature dssp ss_numeric
-feature dssp ss_numeric_normalized
-feature dssp ss_3state
-feature dssp acc_raw
-feature dssp acc_normalized
+#feature dssp ss
+#feature dssp ss_numeric
+#feature dssp ss_numeric_normalized
+feature dssp sec_3state
+#feature dssp acc_raw
+#feature dssp acc_normalized
 feature dssp acc_10state

@@ -1,16 +1,12 @@
-package Setbench::Source::psic;
+package Reprof::Source::psic;
 
 
 sub predictprotein {
-    my ($self, $raw_id) = @_;
+    my ($self, $raw, $seq) = @_;
 
-    #--------------------------------------------------
-    # config 
-    #-------------------------------------------------- 
     my $target = "psic";
-    my $fasta_file = "/mnt/project/reprof/data/fasta/$raw_id.fasta";
-
-    my ($file) = grep /$target/, (`ppc_fetch --seqfile=$fasta_file`);
+    my ($file) = grep /$target/, (`ppc_fetch --seq=$seq`);
+    chomp $file;
 
     return $file;
 }

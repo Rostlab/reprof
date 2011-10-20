@@ -1,22 +1,10 @@
-package Setbench::Parser::horiz;
+package Reprof::Parser::horiz;
 
 use strict;
 use feature qw(say);
 use Carp;
 use Data::Dumper;
-
-my $ss_features = {
-    H => { number => 0, oneletter   => 'H' },
-    G => { number => 0, oneletter   => 'H' },
-    I => { number => 0, oneletter   => 'H' },
-    E => { number => 1, oneletter   => 'E' },
-    B => { number => 1, oneletter   => 'E' },
-    L => { number => 2, oneletter   => 'L' },
-    S => { number => 2, oneletter   => 'L' },
-    T => { number => 2, oneletter   => 'L' },
-    '' => { number => 2, oneletter   => 'L' },
-    ' ' => { number => 2, oneletter   => 'L' }
-};
+use Reprof::Converter qw(sec_features);
 
 sub new {
     my ($class, $file) = @_;
@@ -46,12 +34,12 @@ sub parse {
 }
 
 
-sub ss_3state {
+sub sec_3state {
     my ($self) = @_;
 
     my @result;
     foreach my $val (@{$self->{Pred}}) {
-        my $nr = $ss_features->{$val}{number};
+        my $nr = sec_features($val, "number");
         my @raw = (0, 0, 0);
         $raw[$nr] = 1;
         push @result, \@raw;

@@ -1,4 +1,4 @@
-package Setbench::Writer::fann;
+package Reprof::Writer::fann;
 
 use strict;
 use feature qw(say);

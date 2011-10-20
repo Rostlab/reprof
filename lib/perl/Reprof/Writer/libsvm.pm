@@ -1,4 +1,4 @@
-package Setbench::Writer::libsvm;
+package Reprof::Writer::libsvm;
 
 use strict;
 use feature qw(say);
