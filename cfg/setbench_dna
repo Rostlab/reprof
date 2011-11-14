@@ -1,0 +1,76 @@
+# options
+option fasta /mnt/project/reprof/data/fasta_multi/dna/standard.fasta
+option out /mnt/project/reprof/data/sets/dna/standard.set
+
+# source options
+source fasta predictprotein
+source blastPsiMat predictprotein
+source bind reprof
+source profRdb predictprotein
+source profbval predictprotein
+source mdisorder predictprotein
+source coils predictprotein
+source isis predictprotein
+#source psic predictprotein
+
+feature bind bind_2state
+# local psic
+# feature psic raw
+# feature psic normalized
+# feature psic numseq
+
+# local fasta features
+#feature fasta residue
+#feature fasta position
+#feature fasta profile
+#feature fasta relative_position
+#feature fasta relative_position_reverse
+#feature fasta mass
+#feature fasta volume
+#feature fasta hydrophobicity
+#feature fasta cbeta
+#feature fasta hbreaker
+feature fasta charge
+#feature fasta polarity
+feature fasta in_sequence_bit
+
+# global fasta features
+feature fasta aa_composition
+#feature fasta length
+feature fasta length_4state
+feature fasta distanceN
+feature fasta distanceC
+
+# local blastPsiMat features
+#feature blastPsiMat raw
+feature blastPsiMat normalized
+#feature blastPsiMat percentage
+feature blastPsiMat weight
+feature blastPsiMat info
+
+# local dssp features
+#feature dssp ss
+#feature dssp ss_numeric
+#feature dssp ss_numeric_normalized
+#feature dssp sec_3state
+#feature dssp acc_raw
+#feature dssp acc_normalized
+#feature dssp acc_10state
+
+feature profRdb OtHEL
+feature profRdb RI_S
+feature profRdb OtACC
+feature profRdb RI_A
+
+feature profbval OtFR
+feature profbval RI
+
+feature mdisorder MD_raw
+feature mdisorder MD_rel
+feature mdisorder MD2st_2state
+
+feature coils frame_14_7state
+feature coils prob_14
+
+feature isis bind_2state
+feature isis raw

@@ -10,6 +10,9 @@ use feature qw(say);
 use Carp;
 use Data::Dumper;
 use Getopt::Long;
+use File::Path qw(make_path);
+use File::Spec;
+use AI::FANN;
 
 #--------------------------------------------------
 # options
@@ -22,7 +25,8 @@ my $out_format;
 my $writer;
 
 GetOptions(
-        'config|c=s'    =>  \$config_file
+        'config|c=s'    =>  \$config_file,
+        'out|o=s'       =>  \$out_file,
         );
 
 #--------------------------------------------------
@@ -62,7 +66,9 @@ while (my $line = <CONFIG>) {
             $set_file = $value;
         }
         elsif ($format eq "out") {
-            $out_file = $value;
+            if (! defined $out_file) {
+                $out_file = $value;
+            }
         }
         elsif ($format eq "format") {
             $out_format = $value;
@@ -72,12 +78,13 @@ while (my $line = <CONFIG>) {
 }
 close CONFIG;
 
+my ($d, $out_path, $d2) = File::Spec->splitpath($out_file);
 
 #--------------------------------------------------
 # list
 #-------------------------------------------------- 
-open LIST, $list_file or croak "Could not open $list_file\n";
 my %list;
+open LIST, $list_file or croak "Could not open $list_file\n";
 while (my $header = <LIST>) {
     my $seq = <LIST>;
     chomp $header;
@@ -86,20 +93,53 @@ while (my $header = <LIST>) {
 }
 close LIST;
 
-say scalar keys %list;
 #--------------------------------------------------
 # slurp outputs of other methods (if any) 
 #-------------------------------------------------- 
 my %output_features;
 foreach my $feat (@inputs, @outputs) {
     if ($feat->[0] eq "output") {
-        my $file = $feat->[1];
-        open FEAT, "$file" or croak "Could not open $file\n";
-        my @data = <FEAT>;
-        chomp @data;
-        close FEAT;
+        my ($volume, $setconvert_path, $setconvert_file) = File::Spec->splitpath($feat->[1]);
 
-        $output_features{$file} = \@data;
+        my $setconvert = File::Spec->catfile($setconvert_path, $setconvert_file);
+        my $setconvert_out;
+
+        #say "preparing $setconvert";
+
+        open SETCONVERT, "$setconvert" or croak "Could not open $setconvert\n";
+        while (my $line = <SETCONVERT>) {
+            chomp $line;
+            my @split = split /\s+/, $line;
+            if ($split[0] eq "option" && $split[1] eq "out") {
+                $setconvert_out = $split[2];
+            }
+        }
+        close SETCONVERT;
+
+        say `/mnt/project/reprof/scripts/setconvert.pl -config $setconvert -out $out_path/$setconvert_out`;
+
+        my $network_file = File::Spec->catfile($setconvert_path, "nntrain.model");
+        my $ann = AI::FANN->new_from_file($network_file);
+        $ann->reset_MSE;
+
+        my @data;
+        open FH, "$out_path/$setconvert_out" or croak "Could not open $out_path/$setconvert_out\n";
+        while (my $inputs = <FH>) {
+            my $outputs = <FH>;
+            chomp $inputs;
+            my @input_array = split /\s+/, $inputs;
+            my $nn_output = $ann->run(\@input_array);
+            push @data, (join " ", @$nn_output);
+        }
+        close FH;
+
+        unlink "$out_path/$setconvert_out";
+        #open FEAT, "$file" or croak "Could not open $file\n";
+        #my @data = <FEAT>;
+        #chomp @data;
+        #close FEAT;
+
+        $output_features{$feat->[1]} = \@data;
     }
 }
 
@@ -118,6 +158,9 @@ my $header_written = 0;
 my $entry_count = 0;
 my $count = 0;
 my $max_to = 0;
+
+my ($volume, $path, $file) = File::Spec->splitpath($out_file);
+make_path($path);
 
 open my $fh, ">", $out_file or croak "Could not open $out_file\n";
 open SET, $set_file or croak "Could not open $set_file\n";
@@ -145,7 +188,7 @@ while (my $line = <SET>) {
         if (exists $list{$current_entry}) {
             $inside_entry = 1;
             $entry_count++;
-            say $entry_count if $entry_count % 100 == 0;;
+            #say $entry_count if $entry_count % 100 == 0;;
         }
     }
     elsif ($inside_entry && $split[0] eq "pos") {
@@ -168,7 +211,7 @@ while (my $line = <SET>) {
         $count++;
     }
     elsif ($split[0] eq "pos") {
-        $count++;
+        #$count++;
     }
     elsif ($split[0] eq "end") {
         #--------------------------------------------------
@@ -240,4 +283,4 @@ while (my $line = <SET>) {
 close SET;
 close $fh;
 
-say "size: $size num_inputs: $num_inputs num_outputs: $num_outputs";
+#say "size: $size num_inputs: $num_inputs num_outputs: $num_outputs";

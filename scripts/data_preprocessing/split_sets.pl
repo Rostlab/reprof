@@ -53,7 +53,7 @@ foreach my $i (1 .. $num_bins) {
     close FH;
 
     my $to = $i + ($num_bins - 3);
-    open FH, ">", "$fasta_out"."_$i-".($to % $num_bins).".fasta" or croak "fh error\n";
+    open FH, ">", "$fasta_out"."_$i-".(($to % $num_bins)==0?$num_bins:($to % $num_bins)).".fasta" or croak "fh error\n";
     foreach my $bin ($i - 1 .. $to - 1) {
         foreach my $seq (@{$bins->[$bin % $num_bins]}) {
             say FH ">".$seq->[0];

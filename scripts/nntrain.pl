@@ -29,6 +29,8 @@ my $config_file;
 my $balanced_train = 0;
 my $balanced_ctrain = 0;
 my $max_time = -1;
+my $measure_type = "Qn";
+my $measure_pos = 0;
 
 GetOptions(	
 			'config|c=s'	        => \$config_file
@@ -80,6 +82,15 @@ while (my $line = <CONFIG>) {
         elsif ($option eq "max_time") {
             $max_time = $value;
         }
+        elsif ($option eq "measure_type") {
+            $measure_type = $value;
+        }
+        elsif ($option eq "measure_pos") {
+            $measure_pos = $value;
+        }
+        else {
+            warn "unknown option: $option $value\n";
+        }
     }
 }
 close CONFIG;
@@ -112,7 +123,7 @@ sub iostring2arrays {
     return (\@inputs, \@outputs);
 }
 
-print "checking input size... ";
+#print "checking input size... ";
 my @train_data = parse_data($train_file);
 
 my @first_dp = iostring2arrays($train_data[0]);
@@ -137,9 +148,9 @@ else {
 }
 
 undef @train_data;
-say "done...";
+#say "done...";
 
-my $max_Qn = -1;
+my $max_ctrain = -1;
 my $best_epoch = 0;
 my $boring_epochs = 0;
 
@@ -149,10 +160,10 @@ my $boring_epochs = 0;
 my $result_file = "$out/nntrain.result";
 
 my $training_file = "$out/nntrain.train";
-open TRAINING, ">", $training_file  or die "Could not open $training_file\n";
+#open TRAINING, ">", $training_file  or die "Could not open $training_file\n";
 #select TRAINING;
 #$|++;
-select STDOUT;
+#select STDOUT;
 
 
 #--------------------------------------------------
@@ -174,17 +185,17 @@ $ann->train_stop_function(FANN_STOPFUNC_MSE);
 $ann->learning_rate($learning_rate);
 $ann->learning_momentum($learning_momentum);
 
-say "created network ", join " ", @layers;
+#say "created network ", join " ", @layers;
 
 #--------------------------------------------------
 # prepare balancing
 #-------------------------------------------------- 
 sub balance {
     my $ori_data = shift;
-    my $max_class_size;
+    my $min_class_size;
     my %grouped_data;
     
-    say "prepare balancing";
+    #say "prepare balancing";
 
     foreach my $dp (@$ori_data) {
         push @{$grouped_data{$dp->[1]}}, $dp;
@@ -192,26 +203,27 @@ sub balance {
     
     while (my ($class, $data) = each %grouped_data) {
         my $size = scalar @$data;
-        say "$class -> $size";
-        if (!defined $max_class_size) {
-            $max_class_size = $size;
+        #say "$class -> $size";
+        if (!defined $min_class_size) {
+            $min_class_size = $size;
         }
-        elsif ($size > $max_class_size) {
-            $max_class_size = $size;
+        elsif ($size < $min_class_size) {
+            $min_class_size = $size;
         }
     }
 
-    say "max train class size: $max_class_size";
+    #say "min train class size: $min_class_size";
 
     my @balanced_data;
 
     while (my ($class, $data) = each %grouped_data) {
         my @shuffled_data = shuffle @$data;
         my $data_size = scalar @shuffled_data;
-        foreach my $i (0 .. $max_class_size - 1) {
-            my $j = $i % ($data_size);
-            push @balanced_data, $shuffled_data[$j];
+        foreach my $i (0 .. $min_class_size - 1) {
+            push @balanced_data, $shuffled_data[$i];
         }
+        my $size = scalar @balanced_data;
+        #say "$class -> $size";
     }
 
     my @shuffled_data = shuffle @balanced_data;
@@ -242,20 +254,22 @@ sub load_data {
 #--------------------------------------------------
 # Loop through epochs 
 #-------------------------------------------------- 
+my $pid = $$;
+my $tmp_model_file = "/tmp/$pid.reprof.model";
 my $start_time = time;
 my $epoch = 0;
 while (1 == 1) {
-    say "epoch " . ++$epoch;
+    #say "epoch " . ++$epoch;
     my @processed_current_data;
 
     #--------------------------------------------------
     # Training 
     #-------------------------------------------------- 
-    print "parsing...";
+    #print "parsing...";
     @processed_current_data = @{load_data($train_file, $balanced_train)};
-    say "done";
+    #say "done";
 
-    print "train... ";
+    #print "train... ";
     $ann->reset_MSE;
     foreach my $dp (@processed_current_data) {
         my @dp_data = iostring2arrays($dp);
@@ -263,16 +277,16 @@ while (1 == 1) {
     }
     my $train_mse = $ann->MSE;
     undef @processed_current_data;
-    say "done";
+    #say "done";
 
     #--------------------------------------------------
     # crosstraining
     #-------------------------------------------------- 
-    print "parsing...";
+    #print "parsing...";
     @processed_current_data = @{load_data($ctrain_file, $balanced_ctrain)};
-    say "done";
+    #say "done";
     
-    print "crosstrain... ";
+    #print "crosstrain... ";
     $ann->reset_MSE;
     my $ctrain_measure = Reprof::Measure->new($num_outputs);
     foreach my $dp (@processed_current_data) {
@@ -282,43 +296,47 @@ while (1 == 1) {
     }
     my $ctrain_mse = $ann->MSE;
     undef @processed_current_data;
-    say "done";
+    #say "done";
 
     #--------------------------------------------------
     # output 
     #-------------------------------------------------- 
-    print "writing outputs...";
-    say TRAINING "epoch $epoch";
-    say TRAINING join " ", "time", (time - $start_time);
-    say TRAINING "hiddens $num_hiddens";
-    say TRAINING join " ", "train_mse", ($train_mse);
-    say TRAINING join " ", "ctrain_mse", ($ctrain_mse);
-    say TRAINING join " ", "ctrain_qn", (map {sprintf "%.3f", $_*100} ($ctrain_measure->Qn));
-    say TRAINING join " ", "ctrain_precisions", (map {sprintf "%.3f", $_*100} ($ctrain_measure->precisions));
-    say TRAINING join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
-    say TRAINING join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
-    say "done";
+    #print "writing outputs...";
+    #say TRAINING "epoch $epoch";
+    #say TRAINING join " ", "time", (time - $start_time);
+    #say TRAINING "hiddens $num_hiddens";
+    #say TRAINING join " ", "train_mse", ($train_mse);
+    #say TRAINING join " ", "ctrain_mse", ($ctrain_mse);
+    #say TRAINING join " ", "ctrain_qn", (map {sprintf "%.3f", $_*100} ($ctrain_measure->Qn));
+    #say TRAINING join " ", "ctrain_precisions", (map {sprintf "%.3f", $_*100} ($ctrain_measure->precisions));
+    #say TRAINING join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
+    #say TRAINING join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
+    #say TRAINING join " ", "ctrain_aucs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->aucs));
+    #say TRAINING join " ", "ctrain_mccs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->mccs));
+    #say "done";
 
     #--------------------------------------------------
     # Save nn if ctrainset reaches new maximum value
     #-------------------------------------------------- 
-    if ($ctrain_measure->Qn > $max_Qn) {
-        $ann->save($nn_file);
-        $max_Qn = $ctrain_measure->Qn;
+    if (($ctrain_measure->$measure_type())[$measure_pos] > $max_ctrain) {
+        $ann->save($tmp_model_file);
+        $max_ctrain = ($ctrain_measure->$measure_type())[$measure_pos];
         $best_epoch = $epoch;
         $boring_epochs = 0;
-        open RESULT, ">", $result_file  or die "Could not open $result_file\n";
-        say RESULT "TRAINING";
-        say RESULT "epoch $epoch";
-        say RESULT join " ", "time", (time - $start_time);
-        say RESULT "hiddens $num_hiddens";
-        say RESULT join " ", "train_mse", ($train_mse);
-        say RESULT join " ", "ctrain_mse", ($ctrain_mse);
-        say RESULT join " ", "ctrain_qn", (map {sprintf "%.3f", $_*100} ($ctrain_measure->Qn));
-        say RESULT join " ", "ctrain_precisions", (map {sprintf "%.3f", $_*100} ($ctrain_measure->precisions));
-        say RESULT join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
-        say RESULT join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
-        close RESULT;
+        #open RESULT, ">", $result_file  or die "Could not open $result_file\n";
+        #say RESULT "TRAINING";
+        #say RESULT "epoch $epoch";
+        #say RESULT join " ", "time", (time - $start_time);
+        #say RESULT "hiddens $num_hiddens";
+        #say RESULT join " ", "train_mse", ($train_mse);
+        #say RESULT join " ", "ctrain_mse", ($ctrain_mse);
+        #say RESULT join " ", "ctrain_qn", (map {sprintf "%.3f", $_*100} ($ctrain_measure->Qn));
+        #say RESULT join " ", "ctrain_precisions", (map {sprintf "%.3f", $_*100} ($ctrain_measure->precisions));
+        #say RESULT join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
+        #say RESULT join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
+        #say RESULT join " ", "ctrain_aucs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->aucs));
+        #say RESULT join " ", "ctrain_mccs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->mccs));
+        #close RESULT;
     }
     else { 
         $boring_epochs++;
@@ -332,9 +350,11 @@ while (1 == 1) {
     my $finished_time = (($max_time > 0 && time - $start_time > $max_time) ? 1 : 0);
 
     if ($finished_boring || $finished_epochs || $finished_time) {
-        say "finishing, because: boring=$finished_boring epochs=$finished_epochs time=$finished_time";
+        #say "finishing, because: boring=$finished_boring epochs=$finished_epochs time=$finished_time";
 
-        $ann = AI::FANN->new_from_file($nn_file);
+        $ann = AI::FANN->new_from_file($tmp_model_file);
+        $ann->save($nn_file);
+        unlink $tmp_model_file;
 
         $ann->reset_MSE;
         my $train_measure = Reprof::Measure->new($num_outputs);
@@ -384,6 +404,8 @@ while (1 == 1) {
         say RESULT join " ", "train_precisions", (map {sprintf "%.3f", $_*100} ($train_measure->precisions));
         say RESULT join " ", "train_recalls", (map {sprintf "%.3f", $_*100} ($train_measure->recalls));
         say RESULT join " ", "train_fmeasures", (map {sprintf "%.3f", $_*100} ($train_measure->fmeasures));
+        say RESULT join " ", "train_aucs", (map {sprintf "%.3f", $_*100} ($train_measure->aucs));
+        say RESULT join " ", "train_mccs", (map {sprintf "%.3f", $_*100} ($train_measure->mccs));
         say "";
 
         say RESULT join " ", "ctrain_mse", ($ctrain_mse);
@@ -391,6 +413,8 @@ while (1 == 1) {
         say RESULT join " ", "ctrain_precisions", (map {sprintf "%.3f", $_*100} ($ctrain_measure->precisions));
         say RESULT join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
         say RESULT join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
+        say RESULT join " ", "ctrain_aucs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->aucs));
+        say RESULT join " ", "ctrain_mccs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->mccs));
         say "";
 
         say RESULT join " ", "test_mse", ($test_mse);
@@ -398,13 +422,15 @@ while (1 == 1) {
         say RESULT join " ", "test_precisions", (map {sprintf "%.3f", $_*100} ($test_measure->precisions));
         say RESULT join " ", "test_recalls", (map {sprintf "%.3f", $_*100} ($test_measure->recalls));
         say RESULT join " ", "test_fmeasures", (map {sprintf "%.3f", $_*100} ($test_measure->fmeasures));
+        say RESULT join " ", "test_aucs", (map {sprintf "%.3f", $_*100} ($test_measure->aucs));
+        say RESULT join " ", "test_mccs", (map {sprintf "%.3f", $_*100} ($test_measure->mccs));
         close RESULT;
 
         last;
     }
 }
 
-close TRAINING;
+#close TRAINING;
 
 #--------------------------------------------------
 #  

@@ -113,17 +113,24 @@ sub mccs {
 
         foreach my $o (0 .. $size - 1) {
             foreach my $p (0 .. $size - 1) {
-                if ($o == $i && $p == $i) {
-                    $tp += $conf->[$o][$p];
+                # true
+                if ($o == $p) {
+                    # positive
+                    if ($o == $i) {
+                        $tp += $conf->[$o][$p];
+                    }
+                    else {
+                        $tn += $conf->[$o][$p];
+                    }
                 }
-                elsif ($o != $i && $p != $i) {
-                    $tn += $conf->[$o][$p];
-                }
-                elsif ($o != $p && $o == $i) {
-                    $fn += $conf->[$o][$p];
-                }
-                elsif ($o != $p && $p == $i) {
-                    $fp += $conf->[$o][$p];
+                else {
+                    # positive
+                    if ($o == $i) {
+                        $fn += $conf->[$o][$p];
+                    }
+                    else {
+                        $fp += $conf->[$o][$p];
+                    }
                 }
             }
         }
@@ -139,23 +146,22 @@ sub mccs {
     return @result;
 }
 
-sub aucs {
-    my $self = shift;
+sub pr_aucs {
+    my ($self, $data_matrix) = @_;
 
     my @result;
 
     my $size = $self->size;
     foreach my $pos (1 .. $size) {
         my $current_class = $pos - 1;
-        #say "current_class: $current_class";
-        my @sorted = sort {$b->[0][$pos] <=> $a->[0][$pos]} @{$self->[0]};
+        my @sorted = sort {$b->[1][$pos] <=> $a->[1][$pos]} @{$self->[0]};
 
-        my $class_result;
 
         my $p = 0;
         my $n = 0;
         foreach my $entry (@sorted) {
-            if ($entry->[1][0] == $current_class) {
+            # positive
+            if ($entry->[0][0] == $current_class) {
                 $p++;
             }
             # negative
@@ -163,55 +169,62 @@ sub aucs {
                 $n++;
             }
         }
+        #say "\ncurrent_class: $current_class p: $p n: $n";
+
         if ($p == 0 || $n == 0) {
             push @result, 0;
             next;
         }
 
+        my %class_result;
+
         my $tp = 0;
         my $fp = 0;
         my $tn = 0;
         my $fn = 0;
+
+        my $pred_pos = 0;
         foreach my $entry (@sorted) {
+            $pred_pos++;
             # true
-            if ($entry->[0][0] == $entry->[1][0]) {
-                # positive
-                if ($entry->[1][0] == $current_class) {
-                    $tp++;
-                }
-                # negative
-                else {
-                    $tn++;
-                }
+            # positive
+            if ($entry->[0][0] == $current_class) {
+                $tp++;
             }
-            # false
+            # negative
             else {
-                # positive
-                if ($entry->[1][0] == $current_class) {
-                    $fp++;
-                }
-                # negative
-                else {
-                    $fn++;
-                }
+                $tn++;
             }
 
-            #say join " ", $tp, $tn, $fp, $fn;
+            # false
+            # positive
+            if ($entry->[0][0] == $current_class) {
+                $fn++;
+            }
+            # negative
+            else {
+                $fp++;
+            }
 
-            my $tpr = $tp / $p;
-            my $fpr = $fp / $n;
+            my $pr = $tp / $pred_pos;
+            my $rec = $tp / $p;
 
-            #say $tpr;
-            #say $fpr;
-
-            push @$class_result, [$tpr, $fpr];
-            #say join " ", $tpr, $fpr;
+            $class_result{$rec} = $pr;
         }
-        #say "";
 
-        my @sorted_results = sort {$a->[1] <=> $b->[1]} @$class_result;
+        my @sorted_results;
+        foreach my $rec (sort {$a <=> $b} keys %class_result) {
+            push @sorted_results, [$class_result{$rec}, $rec];
+        }
+
+        if (defined $data_matrix) {
+            push @$data_matrix, \@sorted_results;
+        }
+
         my $A = 0;
         foreach my $i (1 .. scalar @sorted_results - 1) {
+            #foreach my $i (1 .. scalar @$class_result - 1) {
+
             my $x1 = $sorted_results[$i - 1]->[1];
             my $x2 = $sorted_results[$i]->[1];
 
@@ -221,6 +234,102 @@ sub aucs {
 
             $A += (($a + $b) / 2) * $h;
             #say "h $h a $a b $b A $A";
+
+            #say join " ", @{$sorted_results[$i-1]}, "x1: $x1  x2: $x2  h: $h  a: $a  b: $b  A: $A";
+        }
+        push @result, $A;
+    }
+
+    return @result;
+}
+
+sub aucs {
+    my ($self, $data_matrix) = @_;
+
+    my @result;
+
+    my $size = $self->size;
+    foreach my $pos (1 .. $size) {
+        my $current_class = $pos - 1;
+        my @sorted = sort {$b->[1][$pos] <=> $a->[1][$pos]} @{$self->[0]};
+
+
+        my $p = 0;
+        my $n = 0;
+        foreach my $entry (@sorted) {
+            # positive
+            if ($entry->[0][0] == $current_class) {
+                $p++;
+            }
+            # negative
+            else {
+                $n++;
+            }
+        }
+        #say "\ncurrent_class: $current_class p: $p n: $n";
+
+        if ($p == 0 || $n == 0) {
+            push @result, 0;
+            next;
+        }
+
+        my %class_result;
+
+        my $tp = 0;
+        my $fp = 0;
+        my $tn = 0;
+        my $fn = 0;
+        foreach my $entry (@sorted) {
+            # true
+            # positive
+            if ($entry->[0][0] == $current_class) {
+                $tp++;
+            }
+            # negative
+            else {
+                $tn++;
+            }
+
+            # false
+            # positive
+            if ($entry->[0][0] == $current_class) {
+                $fn++;
+            }
+            # negative
+            else {
+                $fp++;
+            }
+
+            my $tpr = $tp / $p;
+            my $fpr = $fp / $n;
+
+            $class_result{$fpr} = $tpr;
+        }
+
+        my @sorted_results;
+        foreach my $fpr (sort {$a <=> $b} keys %class_result) {
+            push @sorted_results, [$class_result{$fpr}, $fpr];
+        }
+
+        if (defined $data_matrix) {
+            push @$data_matrix, \@sorted_results;
+        }
+
+        my $A = 0;
+        foreach my $i (1 .. scalar @sorted_results - 1) {
+            #foreach my $i (1 .. scalar @$class_result - 1) {
+
+            my $x1 = $sorted_results[$i - 1]->[1];
+            my $x2 = $sorted_results[$i]->[1];
+
+            my $h = $x2 - $x1;
+            my $a = $sorted_results[$i - 1]->[0];
+            my $b = $sorted_results[$i]->[0];
+
+            $A += (($a + $b) / 2) * $h;
+            #say "h $h a $a b $b A $A";
+
+            #say join " ", @{$sorted_results[$i-1]}, "x1: $x1  x2: $x2  h: $h  a: $a  b: $b  A: $A";
         }
         push @result, $A;
     }

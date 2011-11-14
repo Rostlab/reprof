@@ -14,7 +14,8 @@ sub new {
         normalized => [],
         percentage   => [],
         info       => [],
-        weight     => []
+        weight     => [],
+        res         => [],
     };
 
     bless $self, $class;
@@ -36,6 +37,8 @@ sub parse {
         $line =~ s/^\s+//;
         my @split = split /\s+/, $line;
 
+        my $res = $split[1];
+        push @{$self->{res}}, $res;
         my @raws = @split[2..21];
         my @norms = map {normalize($_)} @raws;
         push @{$self->{raw}}, \@raws;
@@ -43,9 +46,14 @@ sub parse {
         my @pcs = @split[22 .. 41];
         my @pc_norms = map {$_ / 100} @pcs;
         push @{$self->{percentage}}, \@pc_norms;
-        push @{$self->{info}}, $split[42];
-        push @{$self->{weight}}, $split[43];
+        push @{$self->{info}}, ($split[42]);
+        push @{$self->{weight}}, ($split[43]);
     }
+}
+
+sub res {
+    my $self = shift;
+    return @{$self->{res}};
 }
 
 sub raw {

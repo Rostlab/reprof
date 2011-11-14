@@ -124,7 +124,8 @@ sub aa {
 
 sub normalize {
     my $x = shift;
-    return 1.0 / (1.0 + exp(-$x));
+    my $t = shift || 0;
+    return 1.0 / (1.0 + exp(-($x - $t)));
 }
 
 1;

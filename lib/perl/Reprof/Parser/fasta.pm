@@ -55,6 +55,11 @@ sub parse {
     $self->{length} = scalar @{$self->{data}};
 }
 
+sub header {
+    my $self = shift;
+    return $self->{header};
+}
+
 sub residue {
     my ($self, $id) = @_;
 

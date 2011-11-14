@@ -1,0 +1,16 @@
+option list /mnt/project/reprof//data/lists/all1_onechain.list
+option set /tmp/reprof/all.set
+option format fann
+option out /tmp/reprof//mnt/project/reprof/runs/1/precise/acc/pre/final2/14///train.set
+output dssp acc_10state 1
+input blastPsiMat normalized 15
+input blastPsiMat weight 3
+input psic normalized 19
+input fasta profile 1
+input fasta relative_position 31
+input fasta hbreaker 3
+input fasta in_sequence_bit 19
+input fasta mass 1
+input fasta volume 11
+input fasta length_5state 1
+ 

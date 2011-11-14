@@ -1,11 +1,12 @@
 package Reprof::Source::profRdb;
 
-
 sub predictprotein {
     my ($self, $raw, $seq) = @_;
 
-    my $target = "profRdb";
-    my ($file) = grep /$target/, (`ppc_fetch --seq=$seq`);
+    my @split = split /::/, $self;
+    my $target = $split[scalar @split - 1];
+
+    my ($file) = grep /\.$target$/, (`ppc_fetch --seq=$seq`);
     chomp $file;
 
     return $file;

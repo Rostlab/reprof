@@ -107,6 +107,8 @@ foreach my $entry (@list) {
     my $sequence = $id2sequence{$entry};
     #say $sequence;
     say "$count of ".(scalar @list) if scalar ++$count % 10 == 0;
+    #next if ($count < 320);
+    #last if ($count > 320);
     #--------------------------------------------------
     # parse needed files
     #-------------------------------------------------- 
@@ -117,6 +119,7 @@ foreach my $entry (@list) {
 
         my $parser_module = "Reprof::Parser::$format";
         my $file = shift @source_results;
+        #say $file;
         $parsers{$format} = $parser_module->new($file);
 
         $parser_args{$format} = \@source_results;
@@ -126,8 +129,10 @@ foreach my $entry (@list) {
     # extract 
     #-------------------------------------------------- 
     my $tmp_features = [];
+    my $i = 0;
     foreach my $feats (@$features) {
         my ($format, $feature) = @$feats;
+        #say "f ", $i++, " $format $feature";
 
         my @args = @{$parser_args{$format}};
         my @values = $parsers{$format}->$feature(@args);
@@ -156,7 +161,9 @@ foreach my $entry (@list) {
     say OUT "entry $entry";
     foreach my $pos (0 .. $seq_length - 1) {
         print OUT "pos";
+        my $i = 0;
         foreach my $tmp_out (@$tmp_features) {
+            #say $i++;
             print OUT " ", join " ", (ref $tmp_out->[$pos]?@{$tmp_out->[$pos]}:$tmp_out->[$pos]);
         }
         print OUT "\n";

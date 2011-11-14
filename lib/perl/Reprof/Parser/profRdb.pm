@@ -1,4 +1,4 @@
-package Reprof::Parser::bind;
+package Reprof::Parser::profRdb;
 
 use strict;
 use feature qw(say);
@@ -43,6 +43,68 @@ sub parse {
     close FH;
 }
 
+sub OtHEL {
+    my ($self) = @_;
+
+    my @OtH = @{$self->{OtH}};
+    my @OtE = @{$self->{OtE}};
+    my @OtL = @{$self->{OtL}};
+
+    my @result;
+    foreach my $pos (0 .. scalar @OtH - 1) {
+        push @result, [($OtH[$pos] / 100), ($OtE[$pos] / 100), ($OtL[$pos] / 100)];
+    }
+
+    return @result;
+}
+
+sub RI_S {
+    my ($self) = @_;
+
+    my @RI_S = @{$self->{RI_S}};
+
+    my @result;
+    foreach my $ri_s (@RI_S) {
+        push @result, ($ri_s / 10);
+    }
+
+    return @result;
+}
+
+sub RI_A {
+    my ($self) = @_;
+
+    my @RI_A = @{$self->{RI_A}};
+
+    my @result;
+    foreach my $ri_a (@RI_A) {
+        push @result, ($ri_a / 10);
+    }
+
+    return @result;
+}
+
+sub OtACC {
+    my ($self) = @_;
+
+    my @Ot0 = @{$self->{Ot0}};
+    my @Ot1 = @{$self->{Ot1}};
+    my @Ot2 = @{$self->{Ot2}};
+    my @Ot3 = @{$self->{Ot3}};
+    my @Ot4 = @{$self->{Ot4}};
+    my @Ot5 = @{$self->{Ot5}};
+    my @Ot6 = @{$self->{Ot6}};
+    my @Ot7 = @{$self->{Ot7}};
+    my @Ot8 = @{$self->{Ot8}};
+    my @Ot9 = @{$self->{Ot9}};
+
+    my @result;
+    foreach my $pos (0 .. scalar @Ot0 - 1) {
+        push @result, [($Ot0[$pos] / 100), ($Ot1[$pos] / 100), ($Ot2[$pos] / 100), ($Ot3[$pos] / 100), ($Ot4[$pos] / 100), ($Ot5[$pos] / 100), ($Ot6[$pos] / 100), ($Ot7[$pos] / 100), ($Ot8[$pos] / 100), ($Ot9[$pos] / 100)];
+    }
+
+    return @result;
+}
 
 sub PHEL_3state {
     my ($self) = @_;
