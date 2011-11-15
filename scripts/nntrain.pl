@@ -191,8 +191,9 @@ $ann->learning_momentum($learning_momentum);
 # prepare balancing
 #-------------------------------------------------- 
 sub balance {
-    my $ori_data = shift;
+    my ($ori_data, $mode) = @_;
     my $min_class_size;
+    my $max_class_size;
     my %grouped_data;
     
     #say "prepare balancing";
@@ -210,20 +211,39 @@ sub balance {
         elsif ($size < $min_class_size) {
             $min_class_size = $size;
         }
+
+        if (!defined $max_class_size) {
+            $max_class_size = $size;
+        }
+        elsif ($size > $max_class_size) {
+            $max_class_size = $size;
+        }
     }
 
     #say "min train class size: $min_class_size";
 
     my @balanced_data;
 
-    while (my ($class, $data) = each %grouped_data) {
-        my @shuffled_data = shuffle @$data;
-        my $data_size = scalar @shuffled_data;
-        foreach my $i (0 .. $min_class_size - 1) {
-            push @balanced_data, $shuffled_data[$i];
+    if ($mode eq "1" || $mode eq "undersampling") {
+        while (my ($class, $data) = each %grouped_data) {
+            my @shuffled_data = shuffle @$data;
+            my $data_size = scalar @shuffled_data;
+            foreach my $i (0 .. $min_class_size - 1) {
+                push @balanced_data, $shuffled_data[$i];
+            }
         }
-        my $size = scalar @balanced_data;
-        #say "$class -> $size";
+    }
+    elsif ($mode eq "oversampling") {
+        while (my ($class, $data) = each %grouped_data) {
+            my @shuffled_data = shuffle @$data;
+            my $data_size = scalar @shuffled_data;
+            foreach my $i (0 .. $max_class_size - 1) {
+                push @balanced_data, $shuffled_data[$i % $data_size];
+            }
+        }
+    }
+    else {
+        carp "Invalid balancing mode\n";
     }
 
     my @shuffled_data = shuffle @balanced_data;
@@ -242,7 +262,7 @@ sub load_data {
 
     my @processed_current_data;
     if ($balanced) {
-        @processed_current_data = @{balance(\@current_data)};
+        @processed_current_data = @{balance(\@current_data, $balanced)};
     }
     else {
         @processed_current_data = shuffle @current_data;
@@ -405,6 +425,7 @@ while (1 == 1) {
         say RESULT join " ", "train_recalls", (map {sprintf "%.3f", $_*100} ($train_measure->recalls));
         say RESULT join " ", "train_fmeasures", (map {sprintf "%.3f", $_*100} ($train_measure->fmeasures));
         say RESULT join " ", "train_aucs", (map {sprintf "%.3f", $_*100} ($train_measure->aucs));
+        say RESULT join " ", "train_pr_aucs", (map {sprintf "%.3f", $_*100} ($train_measure->pr_aucs));
         say RESULT join " ", "train_mccs", (map {sprintf "%.3f", $_*100} ($train_measure->mccs));
         say "";
 
@@ -414,6 +435,7 @@ while (1 == 1) {
         say RESULT join " ", "ctrain_recalls", (map {sprintf "%.3f", $_*100} ($ctrain_measure->recalls));
         say RESULT join " ", "ctrain_fmeasures", (map {sprintf "%.3f", $_*100} ($ctrain_measure->fmeasures));
         say RESULT join " ", "ctrain_aucs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->aucs));
+        say RESULT join " ", "ctrain_pr_aucs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->pr_aucs));
         say RESULT join " ", "ctrain_mccs", (map {sprintf "%.3f", $_*100} ($ctrain_measure->mccs));
         say "";
 
@@ -423,6 +445,7 @@ while (1 == 1) {
         say RESULT join " ", "test_recalls", (map {sprintf "%.3f", $_*100} ($test_measure->recalls));
         say RESULT join " ", "test_fmeasures", (map {sprintf "%.3f", $_*100} ($test_measure->fmeasures));
         say RESULT join " ", "test_aucs", (map {sprintf "%.3f", $_*100} ($test_measure->aucs));
+        say RESULT join " ", "test_pr_aucs", (map {sprintf "%.3f", $_*100} ($test_measure->pr_aucs));
         say RESULT join " ", "test_mccs", (map {sprintf "%.3f", $_*100} ($test_measure->mccs));
         close RESULT;
 

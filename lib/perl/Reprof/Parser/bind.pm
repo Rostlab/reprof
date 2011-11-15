@@ -33,4 +33,20 @@ sub bind_2state {
     return @{$self->{bind}};
 }
 
+sub bind {
+    my $self = shift;
+    
+    my @result;
+    foreach my $val (@{$self->{bind}}) {
+        if ($val->[0] == 1) {
+            push @result, 1;
+        }
+        else {
+            push @result, 0;
+        }
+    }
+
+    return @result;
+}
+
 1;

@@ -21,6 +21,7 @@ sub parse {
 
     open FH, $file or croak "fh error\n";
     while (my $line = <FH>) {
+        next if ($line =~ m/^#/);
         chomp $line;
         $line =~ s/^\s+//;
 
