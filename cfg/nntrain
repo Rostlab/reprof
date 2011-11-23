@@ -1,9 +1,0 @@
-option hiddens 200
-option learning_rate 0.01
-option learning_momentum 0.3
-option max_epochs 200
-option wait_epochs 5
-option out ./test/
-option trainset ./test/333a.fannset
-option ctrainset ./test/333b.fannset
-option testset ./test/333c.fannset

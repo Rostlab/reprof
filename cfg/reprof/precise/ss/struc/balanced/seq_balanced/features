@@ -1,7 +1,0 @@
-option list /mnt/project/reprof//data/lists/all1.list
-option set /tmp/reprof/all.set
-option format fann
-option out /mnt/project/reprof/runs/1/precise/ss/struc/balanced/seq_balanced/best/train.set
-output dssp ss_3state 1
-
-input output /mnt/project/reprof/runs/1/precise/ss/seq/balanced/best/all.out 87
