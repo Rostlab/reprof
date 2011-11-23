@@ -176,7 +176,7 @@ sub pr_aucs {
             next;
         }
 
-        my %class_result;
+        my @class_result;
 
         my $tp = 0;
         my $fp = 0;
@@ -209,28 +209,23 @@ sub pr_aucs {
             my $pr = $tp / $pred_pos;
             my $rec = $tp / $p;
 
-            $class_result{$rec} = $pr;
-        }
-
-        my @sorted_results;
-        foreach my $rec (sort {$a <=> $b} keys %class_result) {
-            push @sorted_results, [$class_result{$rec}, $rec];
+            push @class_result, [$rec, $pr, $entry->[1][$pos]];
         }
 
         if (defined $data_matrix) {
-            push @$data_matrix, \@sorted_results;
+            push @$data_matrix, \@class_result;
         }
 
         my $A = 0;
-        foreach my $i (1 .. scalar @sorted_results - 1) {
+        foreach my $i (1 .. scalar @class_result - 1) {
             #foreach my $i (1 .. scalar @$class_result - 1) {
 
-            my $x1 = $sorted_results[$i - 1]->[1];
-            my $x2 = $sorted_results[$i]->[1];
+            my $x1 = $class_result[$i - 1]->[0];
+            my $x2 = $class_result[$i]->[0];
 
             my $h = $x2 - $x1;
-            my $a = $sorted_results[$i - 1]->[0];
-            my $b = $sorted_results[$i]->[0];
+            my $a = $class_result[$i - 1]->[1];
+            my $b = $class_result[$i]->[1];
 
             $A += (($a + $b) / 2) * $h;
             #say "h $h a $a b $b A $A";
@@ -273,7 +268,7 @@ sub aucs {
             next;
         }
 
-        my %class_result;
+        my @class_result;
 
         my $tp = 0;
         my $fp = 0;
@@ -303,33 +298,30 @@ sub aucs {
             my $tpr = $tp / $p;
             my $fpr = $fp / $n;
 
-            $class_result{$fpr} = $tpr;
+            push @class_result, [$fpr, $tpr, $entry->[1][$pos]];
         }
 
-        my @sorted_results;
-        foreach my $fpr (sort {$a <=> $b} keys %class_result) {
-            push @sorted_results, [$class_result{$fpr}, $fpr];
-        }
+        #my @sorted_results = sort {$a->[0] <=> $b->[0]} @class_result {
 
         if (defined $data_matrix) {
-            push @$data_matrix, \@sorted_results;
+            push @$data_matrix, \@class_result;
         }
 
         my $A = 0;
-        foreach my $i (1 .. scalar @sorted_results - 1) {
+        foreach my $i (1 .. scalar @class_result - 1) {
             #foreach my $i (1 .. scalar @$class_result - 1) {
 
-            my $x1 = $sorted_results[$i - 1]->[1];
-            my $x2 = $sorted_results[$i]->[1];
+            my $x1 = $class_result[$i - 1]->[0];
+            my $x2 = $class_result[$i]->[0];
 
             my $h = $x2 - $x1;
-            my $a = $sorted_results[$i - 1]->[0];
-            my $b = $sorted_results[$i]->[0];
+            my $a = $class_result[$i - 1]->[1];
+            my $b = $class_result[$i]->[1];
 
             $A += (($a + $b) / 2) * $h;
             #say "h $h a $a b $b A $A";
 
-            #say join " ", @{$sorted_results[$i-1]}, "x1: $x1  x2: $x2  h: $h  a: $a  b: $b  A: $A";
+            #say join " ", @{$class_results[$i-1]}, "x1: $x1  x2: $x2  h: $h  a: $a  b: $b  A: $A";
         }
         push @result, $A;
     }
