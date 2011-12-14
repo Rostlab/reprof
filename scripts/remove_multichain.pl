@@ -2,8 +2,8 @@
 use strict;
 use feature qw(say);
 use Carp;
-use Reprof::Source::dssp;
-use Reprof::Parser::dssp;
+use Perlpred::Source::dssp;
+use Perlpred::Parser::dssp;
 
 my @fasta_files = @ARGV;
 
@@ -22,8 +22,8 @@ foreach my $fasta_file (@fasta_files) {
         chomp $header;
         chomp $seq;
         my $id = substr $header, 1;
-        my ($file, $chain) = Reprof::Source::dssp->rost_db($id, $seq);
-        my $dssp_parser = Reprof::Parser::dssp->new($file);
+        my ($file, $chain) = Perlpred::Source::dssp->rost_db($id, $seq);
+        my $dssp_parser = Perlpred::Parser::dssp->new($file);
 
         my $chains = $dssp_parser->get_chains;
         my $chain_count = scalar @$chains;

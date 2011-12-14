@@ -4,8 +4,8 @@ use feature qw(say);
 use Carp;
 use Getopt::Long;
 
-use Reprof::Parser::dssp;
-use Reprof::Source::dssp;
+use Perlpred::Parser::dssp;
+use Perlpred::Source::dssp;
 
 my $list_file;
 my $out_file;
@@ -25,13 +25,13 @@ my %sequences;
 my $missing = 0;
 foreach my $line (@list) {
     my ($entry) = split /\s+/, $line;
-    my ($dssp_file) = Reprof::Source::dssp->rost_db($entry);
+    my ($dssp_file) = Perlpred::Source::dssp->rost_db($entry);
     if (! -e $dssp_file) {
         $missing++;
         warn "$dssp_file not found\n";
     }
     else {
-        my $dssp_parser = Reprof::Parser::dssp->new($dssp_file);
+        my $dssp_parser = Perlpred::Parser::dssp->new($dssp_file);
         my $chains = $dssp_parser->get_chains;
         foreach my $chain (@$chains) {
             my @seq = $dssp_parser->res($chain);

@@ -5,7 +5,7 @@
 #
 # Author: hoenigschmid@rostlab.org
 #-------------------------------------------------- 
-use lib qw(/mnt/home/hoenigschmid/project/perlpred/);
+use lib qw(/mnt/project/reprof/lib/perl/);
 
 use strict;
 use feature qw(say);
@@ -18,8 +18,10 @@ use File::Spec;
 
 use AI::FANN;
 
-use Perlpred::Parser::fasta;
-use Perlpred::Parser::blastPsiMat;
+use RG::Reprof::fasta;
+use RG::Reprof::blastPsiMat;
+#use Perlpred::Parser::fasta;
+#use Perlpred::Parser::blastPsiMat;
 
 # Usage
 my $usage = "
