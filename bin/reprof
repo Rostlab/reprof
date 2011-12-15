@@ -1,13 +1,14 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #--------------------------------------------------
 # Predict secondary structure and solvent
 # accessibility from sequece
 #
 # Author: hoenigschmid@rostlab.org
 #-------------------------------------------------- 
-use lib qw(/mnt/project/reprof/lib/perl/);
+use lib qw(/mnt/project/reprof/lib/);
 
 use strict;
+use warnings;
 use feature qw(say);
 use Carp;
 use Getopt::Long;
@@ -15,6 +16,7 @@ use List::Util qw(sum min max);
 use POSIX qw(floor);
 use Cwd;
 use File::Spec;
+use Pod::Usage;
 
 use AI::FANN;
 
@@ -23,43 +25,11 @@ use RG::Reprof::blastPsiMat;
 #use Perlpred::Parser::fasta;
 #use Perlpred::Parser::blastPsiMat;
 
-# Usage
-my $usage = "
-NAME:
-Perlpred
-
-DESCRIPTION:
-Secondary structure and solvent accessibility prediction using neural networsk
-
-USAGE:
-reprof.pl [-blastPsiMat [query.blastPsiMat] | -fasta [query.fasta]] [OPTIONS]
-
-OPTIONS:
--b, -blastPsiMat
-\tInput BLAST PSSM matrix file
--f, -fasta
-\tInput (single) FASTA file
--o, -out
-\tEither an output file or a directory. If not provided or a directory, the suffix of the input filename is replaced to create an output filename
--mutations
-\tEither the keyword \"all\" to predict all possible mutations or a file containing mutations one per line such as \"C12M\" for C is mutated to M on position 12. This mutation code is also attached to the filename using \"_\". An additional file ending \"_ORI\" contains the prediction using no evolutionary information even if the blastPsiMat file was provided
--modeldir
-\tDirectory where the model and feature files are stored
-
-EXAMPLES:
-reprof -blastPsiMat query.blastPsiMat -out myPrediction.reprof
-reprof -blastPsiMat query.blastPsiMat -mutations all
-reprof -fasta query.fasta -mutations mutations.file
-
-COMMENT:
-The output fileformat is similar to the profRdb format except the \"O\" and \"Ot\" prefixed columns, the introducing comment and the added P10 column.
-";
-
 # Parameters
 my $fasta_file;
 my $blastPsiMat_file;
 my $out_file;
-my $model_dir = "/mnt/project/reprof/models/";
+my $model_dir = "/mnt/project/reprof/share/";
 my $mutation_file;
 my %specific_models;
 
@@ -140,17 +110,17 @@ my $acc_norm = {
 # Check if either blastPsiMat or fasta file is present
 if (defined $blastPsiMat_file && -e $blastPsiMat_file) {
     # Load blastPsiMat file, and create fasta parser from sequence
-    $parsers{blastPsiMat} = Perlpred::Parser::blastPsiMat->new($blastPsiMat_file);
+    $parsers{blastPsiMat} = RG::Reprof::blastPsiMat->new($blastPsiMat_file);
     my @res = $parsers{blastPsiMat}->res();
-    $parsers{fasta} = Perlpred::Parser::fasta->new_sequence(join "", @res);
+    $parsers{fasta} = RG::Reprof::fasta->new_sequence(join "", @res);
 }
 elsif (defined $fasta_file && -e $fasta_file) {
     # Load fasta file
-    $parsers{fasta} = Perlpred::Parser::fasta->new($fasta_file);
+    $parsers{fasta} = RG::Reprof::fasta->new($fasta_file);
 }
 else {
     # Print usage
-    croak $usage;
+    pod2usage(-verbose => 1);
 }
 
 # Load models and feature lists
@@ -279,9 +249,11 @@ if (defined $mutation_file) {
 foreach my $mutation (@mutations) {
     my ($aa_ori, $i, $aa_mut) = @$mutation;
 
+    say "### $aa_ori $i $aa_mut ###";
+
     my @sequence_mut = @sequence;
     $sequence_mut[$i - 1] = $aa_mut;
-    $parsers{fasta} = Perlpred::Parser::fasta->new_sequence(join "", @sequence_mut);
+    $parsers{fasta} = RG::Reprof::fasta->new_sequence(join "", @sequence_mut);
 
     my $seq_from = max((($i - 1) - 1 * $max_window + 1), 0);
     my $seq_to =   min((($i - 1) + 1 * $max_window - 1), ($chain_length - 1));
@@ -551,3 +523,53 @@ sub reliability {
 
     return floor(10 * ($val - $val2));
 }
+
+__END__
+=head1 NAME
+
+reprof - predict secondary structure and solvent accessibility
+
+=head1 SYNOPSIS
+
+reprof.pl [-blastPsiMat [query.blastPsiMat] | -fasta [query.fasta]] [OPTIONS]
+
+=head1 DESCRIPTION
+
+Predict secondary structure and solvent accessibility...
+The output fileformat is similar to the profRdb format except the "O" and "Ot" prefixed columns, the introducing comment and the added P10 column.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-b, -blastPsiMat>
+
+Input BLAST PSSM matrix file
+
+=item B<-f, -fasta>
+
+Input (single) FASTA file
+
+=item B<-o, -out>
+
+Either an output file or a directory. If not provided or a directory, the suffix of the input filename is replaced to create an output filename
+
+=item B<-mutations>
+
+Either the keyword "all" to predict all possible mutations or a file containing mutations one per line such as "C12M" for C is mutated to M on position 12. This mutation code is also attached to the filename using "_". An additional file ending "_ORI" contains the prediction using no evolutionary information even if the blastPsiMat file was provided
+
+=item B<-modeldir>
+
+Directory where the model and feature files are stored
+
+=back
+
+=head1 AUTHOR
+
+Peter Hoenigschmid L<hoenigschmid@rostlab.org>, Burkhard Rost
+
+=head1 SEE ALSO
+
+=head1 COPYRIGHT
+
+=cut

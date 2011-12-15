@@ -57,7 +57,7 @@ The output fileformat is similar to the profRdb format except the \"O\" and \"Ot
 my $fasta_file;
 my $blastPsiMat_file;
 my $out_file;
-my $model_dir = "/mnt/project/reprof/models/";
+my $model_dir = "/mnt/project/reprof/share/";
 my $mutation_file;
 my %specific_models;
 
