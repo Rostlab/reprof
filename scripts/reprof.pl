@@ -54,6 +54,7 @@ The output fileformat is similar to the profRdb format except the \"O\" and \"Ot
 ";
 
 # Parameters
+my $sequence;
 my $fasta_file;
 my $blastPsiMat_file;
 my $out_file;
@@ -62,6 +63,7 @@ my $mutation_file;
 my %specific_models;
 
 GetOptions(
+    "seq=s"    => \$sequence,
     "fasta=s"       => \$fasta_file,
     "blastPsiMat=s" => \$blastPsiMat_file,
     "out=s"         => \$out_file,
@@ -145,6 +147,9 @@ if (defined $blastPsiMat_file && -e $blastPsiMat_file) {
 elsif (defined $fasta_file && -e $fasta_file) {
     # Load fasta file
     $parsers{fasta} = Perlpred::Parser::fasta->new($fasta_file);
+}
+elsif (defined $sequence) {
+    $parsers{fasta} = Perlpred::Parser::fasta->new_sequence($sequence);
 }
 else {
     # Print usage
