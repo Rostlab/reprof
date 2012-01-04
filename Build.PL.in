@@ -8,6 +8,6 @@ my $build = Module::Build->new(
     dist_name       => 'reprof',
     dist_version    => '@VERSION@',
     dist_author     => ['Peter Hoenigschmid <hoenigschmid@rostlab.org>', 'Burkhard Rost'],
-    dist_abstract   => 'secondary structure and solvent accessibility prediction',
+    dist_abstract   => 'protein secondary structure and solvent accessibility predictor',
 );
 $build->create_build_script;

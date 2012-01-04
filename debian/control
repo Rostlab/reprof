@@ -1,15 +1,18 @@
 Source: reprof
-Section: unknown
+Section: science
 Priority: extra
-Maintainer: Peter Hoenigschmid <hoenigschmid@rostlab.org>
+Maintainer: Debian Med Packaging Team <debian-med-packaging@lists.alioth.debian.org>
+Uploaders: Peter Hoenigschmid <hoenigschmid@rostlab.org>, Laszlo Kajan <lkajan@rostlab.org>
 Build-Depends: debhelper (>= 7.0.50~), autotools-dev
-Standards-Version: 3.8.4
-Homepage: <insert the upstream URL, if relevant>
-#Vcs-Git: git://git.debian.org/collab-maint/reprof.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/reprof.git;a=summary
+Standards-Version: 3.9.2
+Vcs-Svn: svn://svn.debian.org/debian-med/trunk/packages/rostlab/reprof/trunk/
+Vcs-Browser: http://svn.debian.org/wsvn/debian-med/trunk/packages/rostlab/reprof/trunk/
+DM-Upload-Allowed: yes
+Homepage: http://rostlab.org/
 
 Package: reprof
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}
+Description: protein secondary structure and accessibility predictor
+ 'reprof' is an improved implementation of 'prof', a popular protein secondary
+ structure and accessibility predictor.
