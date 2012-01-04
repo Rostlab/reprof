@@ -1,11 +1,11 @@
 # options
 option fasta /mnt/project/reprof/data/fasta_multi/standard.fasta
-option out /mnt/project/reprof/data/sets/standard.set
+option out /mnt/project/reprof/data/sets/standard_hh.set
 
 # source options
 source fasta predictprotein
 source dssp rost_db
-source blastPsiMat predictprotein
+source blastPsiMat hhblits_sec
 #source psic predictprotein
 
 # local psic

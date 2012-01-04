@@ -46,6 +46,7 @@ foreach my $i (0 .. 9) {
 my $count = 0;
 while ($fasta_multi_parser->next) {
     say ++$count;
+    #last if $count == 10;
     my ($id, $sequence) = $fasta_multi_parser->get_entry;
 
     my $reprof_file = Perlpred::Source::reprof->reprof($id, $sequence);
@@ -144,7 +145,7 @@ my @avg_measure_rep_data = map {0} (1 .. 13);
 my @hist_rep_data;
 my @l_rep_data;
 foreach my $measure (@measures_rep) {
-    my @current_values = ($measure->Qn, $measure->precisions, $measure->recalls, $measure->fmeasures, $measure->mccs);
+    my @current_values = ($measure->Qn * 100, map {$_ * 100} $measure->precisions, map {$_ * 100} $measure->recalls, map {$_ * 100} $measure->fmeasures, map {$_ * 100} $measure->mccs);
     push @l_rep_data, [$measure->num_points, @current_values];
     push @hist_rep_data, \@current_values;
     foreach my $i (0 .. scalar @avg_measure_rep_data - 1) {
@@ -236,12 +237,12 @@ my @ri_rep_data;
 foreach my $i (0 .. 9) {
     push @ri_rep_data, [$i, 
         $ri_measures_rep[$i]->num_points,
-        ($ri_measures_rep[$i]->num_points / $measure_rep->num_points),
-        $ri_measures_rep[$i]->Qn,
-        $ri_measures_rep[$i]->precisions,
-        $ri_measures_rep[$i]->recalls,
-        $ri_measures_rep[$i]->fmeasures,
-        $ri_measures_rep[$i]->mccs,
+        100 * ($ri_measures_rep[$i]->num_points / $measure_rep->num_points),
+        100 * $ri_measures_rep[$i]->Qn,
+        map {$_ * 100} $ri_measures_rep[$i]->precisions,
+        map {$_ * 100} $ri_measures_rep[$i]->recalls,
+        map {$_ * 100} $ri_measures_rep[$i]->fmeasures,
+        map {$_ * 100} $ri_measures_rep[$i]->mccs,
         ];
 }
 my $ri_rep_file = "$data_tmp.ri_rep";
@@ -291,6 +292,21 @@ say SCRIPT 'text(ri_prof$rel, y=ri_prof$q3, labels=ri_prof$RI, pos=3, col="red")
 
 # end
 say SCRIPT "dev.off()";
+
+# single plots
+say SCRIPT 'tiff("./hist_50.tiff")';
+say SCRIPT 'hist(hist_rep$q3, xlab="Q3 [%]", ylab="Number of chains", xlim=c(0, 100), breaks=50, main=NULL, cex.lab=1.5)';
+say SCRIPT 'grid()';
+say SCRIPT 'box()';
+say SCRIPT 'dev.off()';
+
+say SCRIPT 'tiff("./ri.tiff")';
+say SCRIPT 'plot(ri_rep$rel, ri_rep$q3, type="o", ylim=c(0, 100), xlim=c(0, 100), xlab="% of residues", ylab="Q3 [%]", main=NULL, cex.lab=1.5)';
+say SCRIPT 'text(x=ri_rep$rel, y=ri_rep$q3, labels=ri_rep$RI, pos=3)';#, offset=0.2, cex=0.5)';
+say SCRIPT 'grid()';
+say SCRIPT 'box()';
+say SCRIPT 'dev.off()';
+
 close SCRIPT;
 say `Rscript $script_file`;
 
