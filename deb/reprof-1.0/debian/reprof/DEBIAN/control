@@ -1,0 +1,10 @@
+Package: reprof
+Version: 1.0-1
+Architecture: amd64
+Maintainer: Peter Hoenigschmid <hoenigschmid@rostlab.org>
+Installed-Size: 21372
+Section: unknown
+Priority: extra
+Homepage: <insert the upstream URL, if relevant>
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
