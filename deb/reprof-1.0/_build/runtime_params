@@ -1,6 +1,0 @@
-do{ my $x = {
-       'create_packlist' => '0',
-       'installdirs' => 'vendor',
-       'destdir' => '/mnt/project/reprof/deb/reprof-1.0/debian/reprof'
-     };
-$x; }
