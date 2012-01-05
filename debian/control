@@ -13,6 +13,7 @@ Homepage: http://rostlab.org/
 Package: reprof
 Architecture: all
 Depends: ${perl:Depends}, ${misc:Depends}, librg-reprof-bundle-perl
+Recommends: pp-popularity-contest
 Description: protein secondary structure and accessibility predictor
  'reprof' is an improved implementation of 'prof', a popular protein secondary
  structure and accessibility predictor.
