@@ -173,7 +173,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = scripts lib share
+SUBDIRS = examples scripts lib share
 dist_noinst_DATA = Build.PL.in
 all: all-recursive
 

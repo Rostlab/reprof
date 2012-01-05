@@ -1,4 +1,4 @@
-SUBDIRS = scripts lib share
+SUBDIRS = examples scripts lib share
 
 dist_noinst_DATA = Build.PL.in
 

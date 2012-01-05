@@ -533,9 +533,9 @@ reprof - predict protein secondary structure and solvent accessibility
 
 =head1 SYNOPSIS
 
-reprof.pl --blastPsiMat [query.blastPsiMat] [OPTIONS]
+reprof --blastPsiMat [query.blastPsiMat] [OPTIONS]
 
-reprof.pl --fasta [query.fasta] [OPTIONS]
+reprof --fasta [query.fasta] [OPTIONS]
 
 =head1 DESCRIPTION
 
@@ -549,25 +549,25 @@ lkajan: Peter, please rewrite: The output fileformat is similar to the profRdb f
 
 =over
 
-=item B<-b, --blastPsiMat>
+=item B<-b, --blastPsiMat>=I<FILE>
 
-Input BLAST PSSM matrix file
+Input BLAST PSSM matrix file.
 
-=item B<-f, --fasta>
+=item B<-f, --fasta>=I<FILE>
 
-Input (single) FASTA file
+Input (single) FASTA file.
 
-=item B<-o, --out>
+=item B<-o, --out>=I<FILE>
 
-Either an output file or a directory. If not provided or a directory, the suffix of the input filename is replaced to create an output filename
+Either an output file or a directory. If not provided or a directory, the suffix of the input filename is replaced to create an output filename.
 
-=item B<--mutations>
+=item B<--mutations>=I<[all|FILE]>
 
-Either the keyword "all" to predict all possible mutations or a file containing mutations one per line such as "C12M" for C is mutated to M on position 12. This mutation code is also attached to the filename using "_". An additional file ending "_ORI" contains the prediction using no evolutionary information even if the blastPsiMat file was provided
+Either the keyword "all" to predict all possible mutations or a file containing mutations one per line such as "C12M" for C is mutated to M on position 12. This mutation code is also attached to the filename using "_". An additional file ending "_ORI" contains the prediction using no evolutionary information even if the blastPsiMat file was provided.
 
-=item B<--modeldir>
+=item B<--modeldir>=I<DIR>
 
-Directory where the model and feature files are stored
+Directory where the model and feature files are stored.  Default: F<__pkgdatadir__>.
 
 =back
 
@@ -576,6 +576,18 @@ Directory where the model and feature files are stored
 Peter Hoenigschmid L<hoenigschmid@rostlab.org>, Burkhard Rost
 
 =head1 EXAMPLES
+
+=over
+
+=item Prediction from BLAST PSSM matrix for best results:
+
+ reprof -b __docdir__/examples/example.Q -o /tmp/example.Q.reprof
+
+=item Prediction from FASTA file:
+
+ reprof -f __docdir__/examples/example.fasta -o /tmp/example.fasta.reprof
+
+=back
 
 =head1 COPYRIGHT
 

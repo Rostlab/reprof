@@ -2174,7 +2174,7 @@ am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
 
 
 
-ac_config_files="$ac_config_files Makefile Build.PL lib/Makefile lib/RG/Makefile lib/RG/Reprof/Makefile scripts/Makefile share/Makefile"
+ac_config_files="$ac_config_files Makefile Build.PL examples/Makefile lib/Makefile lib/RG/Makefile lib/RG/Reprof/Makefile scripts/Makefile share/Makefile"
 
 
 
@@ -2893,6 +2893,7 @@ do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "Build.PL") CONFIG_FILES="$CONFIG_FILES Build.PL" ;;
+    "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "lib/Makefile") CONFIG_FILES="$CONFIG_FILES lib/Makefile" ;;
     "lib/RG/Makefile") CONFIG_FILES="$CONFIG_FILES lib/RG/Makefile" ;;
     "lib/RG/Reprof/Makefile") CONFIG_FILES="$CONFIG_FILES lib/RG/Reprof/Makefile" ;;

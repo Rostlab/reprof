@@ -3,6 +3,7 @@ AM_INIT_AUTOMAKE([-Wall])
 AC_CONFIG_FILES([
                  Makefile
                  Build.PL
+		 examples/Makefile
                  lib/Makefile
                  lib/RG/Makefile
                  lib/RG/Reprof/Makefile
