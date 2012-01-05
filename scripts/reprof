@@ -5,8 +5,6 @@
 #
 # Author: hoenigschmid@rostlab.org
 #-------------------------------------------------- 
-use lib qw(/mnt/project/reprof/perl/lib/);
-
 use strict;
 use warnings;
 use feature qw(say);
@@ -528,40 +526,46 @@ sub reliability {
 }
 
 __END__
+
 =head1 NAME
 
-reprof - predict secondary structure and solvent accessibility
+reprof - predict protein secondary structure and solvent accessibility
 
 =head1 SYNOPSIS
 
-reprof.pl [-blastPsiMat [query.blastPsiMat] | -fasta [query.fasta]] [OPTIONS]
+reprof.pl --blastPsiMat [query.blastPsiMat] [OPTIONS]
+
+reprof.pl --fasta [query.fasta] [OPTIONS]
 
 =head1 DESCRIPTION
 
-Predict secondary structure and solvent accessibility...
-The output fileformat is similar to the profRdb format except the "O" and "Ot" prefixed columns, the introducing comment and the added P10 column.
+Predict protein secondary structure and solvent accessibility.
+
+=head2 Output Format
+
+lkajan: Peter, please rewrite: The output fileformat is similar to the profRdb format except the "O" and "Ot" prefixed columns, the introducing comment and the added P10 column.
 
 =head1 OPTIONS
 
-=over 8
+=over
 
-=item B<-b, -blastPsiMat>
+=item B<-b, --blastPsiMat>
 
 Input BLAST PSSM matrix file
 
-=item B<-f, -fasta>
+=item B<-f, --fasta>
 
 Input (single) FASTA file
 
-=item B<-o, -out>
+=item B<-o, --out>
 
 Either an output file or a directory. If not provided or a directory, the suffix of the input filename is replaced to create an output filename
 
-=item B<-mutations>
+=item B<--mutations>
 
 Either the keyword "all" to predict all possible mutations or a file containing mutations one per line such as "C12M" for C is mutated to M on position 12. This mutation code is also attached to the filename using "_". An additional file ending "_ORI" contains the prediction using no evolutionary information even if the blastPsiMat file was provided
 
-=item B<-modeldir>
+=item B<--modeldir>
 
 Directory where the model and feature files are stored
 
@@ -570,6 +574,8 @@ Directory where the model and feature files are stored
 =head1 AUTHOR
 
 Peter Hoenigschmid L<hoenigschmid@rostlab.org>, Burkhard Rost
+
+=head1 EXAMPLES
 
 =head1 COPYRIGHT
 

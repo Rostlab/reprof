@@ -12,7 +12,22 @@ Homepage: http://rostlab.org/
 
 Package: reprof
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}
+Depends: ${perl:Depends}, ${misc:Depends}, librg-reprof-bundle-perl
 Description: protein secondary structure and accessibility predictor
  'reprof' is an improved implementation of 'prof', a popular protein secondary
  structure and accessibility predictor.
+ .
+ This package provides the 'reprof' command.  It is only a command line
+ interface to the functionality provided by the modules in
+ librg-reprof-bundle-perl.
+
+Package: librg-reprof-bundle-perl
+Section: perl
+Architecture: all
+Depends: ${perl:Depends}, ${misc:Depends}, libai-fann-perl
+Description: protein secondary structure and accessibility predictor
+ 'reprof' is an improved implementation of 'prof', a popular protein secondary
+ structure and accessibility predictor.
+ .
+ This package provides the perl modules implementing 'reprof' along with the
+ necessary data files.
