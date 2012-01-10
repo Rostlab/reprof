@@ -605,7 +605,7 @@ Peter Hoenigschmid L<hoenigschmid@rostlab.org>, Burkhard Rost
 
  reprof -i __docdir__/examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations __docdir__/examples/mutations.txt
  # Result files for the above call are going to be:
- # /tmp/mutations_example.Q.{reprof,reprof_F172P,reprof_M1Q,reprof_N34Y,reprof_ORI} - see B<--mutations> for a description of the extensions.
+ # /tmp/mutations_example.Q.{reprof,reprof_F172P,reprof_M1Q,reprof_N34Y,reprof_ORI} - see --mutations for a description of the extensions.
 
 =back
 

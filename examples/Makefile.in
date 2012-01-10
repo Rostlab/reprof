@@ -142,7 +142,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 pkgdocexamplesdir = ${datarootdir}/doc/${PACKAGE}/examples
-dist_pkgdocexamples_DATA = $(srcdir)/example.* $(srcdir)/mutations.*
+dist_pkgdocexamples_DATA = $(srcdir)/example.* $(srcdir)/mutations*
 all: all-am
 
 .SUFFIXES:
