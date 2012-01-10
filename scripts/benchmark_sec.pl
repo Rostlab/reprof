@@ -206,30 +206,30 @@ print SCRIPT 'barplot(as.matrix(class_measure), beside=TRUE, cex.names=0.7, main
 #
 my $hist_rep_file = "$data_tmp.hist_rep";
 write_data_file($hist_rep_file, \@hist_rep_data, qw(q3 pH pE pL rH rE rL fH fE fL mH mE mL));
-say SCRIPT "hist_rep <- read.table(\"$hist_rep_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'hist(hist_rep$q3, main="Q3 Histogram", xlab="Q3", ylab="number of chains", xlim=c(0, 1), breaks=50)';
-say SCRIPT 'hist(hist_rep$pH, main="Precision Helix Histogram", xlab="Precision", ylab="number of chains", xlim=c(0, 1), breaks=50)';
-say SCRIPT 'hist(hist_rep$pE, main="Precision Sheet Histogram", xlab="Precision", ylab="number of chains", xlim=c(0, 1), breaks=50)';
-say SCRIPT 'hist(hist_rep$rH, main="Recall Helix Histogram", xlab="Recall", ylab="number of chains", xlim=c(0, 1), breaks=50)';
-say SCRIPT 'hist(hist_rep$rE, main="Recall Sheet Histogram", xlab="Recall", ylab="number of chains", xlim=c(0, 1), breaks=50)';
+print SCRIPT "hist_rep <- read.table(\"$hist_rep_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'hist(hist_rep$q3, main="Q3 Histogram", xlab="Q3", ylab="number of chains", xlim=c(0, 1), breaks=50)' . "\n";
+print SCRIPT 'hist(hist_rep$pH, main="Precision Helix Histogram", xlab="Precision", ylab="number of chains", xlim=c(0, 1), breaks=50)' . "\n";
+print SCRIPT 'hist(hist_rep$pE, main="Precision Sheet Histogram", xlab="Precision", ylab="number of chains", xlim=c(0, 1), breaks=50)' . "\n";
+print SCRIPT 'hist(hist_rep$rH, main="Recall Helix Histogram", xlab="Recall", ylab="number of chains", xlim=c(0, 1), breaks=50)' . "\n";
+print SCRIPT 'hist(hist_rep$rE, main="Recall Sheet Histogram", xlab="Recall", ylab="number of chains", xlim=c(0, 1), breaks=50)' . "\n";
 
 #
 my $l_rep_file = "$data_tmp.l_rep";
 write_data_file($l_rep_file, \@l_rep_data, qw(length q3 pH pE pL rH rE rL fH fE fL mH mE mL));
-say SCRIPT "l_rep <- read.table(\"$l_rep_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'plot(l_rep$length, l_rep$q3, ylim=c(0, 1), main="Q3 / chain length", xlab="chain length", ylab="Q3")';
+print SCRIPT "l_rep <- read.table(\"$l_rep_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'plot(l_rep$length, l_rep$q3, ylim=c(0, 1), main="Q3 / chain length", xlab="chain length", ylab="Q3")' . "\n";
 
 #
 my $l_psi_file = "$data_tmp.l_psi";
 write_data_file($l_psi_file, \@l_psi_data, qw(length q3 pH pE pL rH rE rL fH fE fL mH mE mL));
-say SCRIPT "l_psi <- read.table(\"$l_psi_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'plot(l_psi$length, l_psi$q3, ylim=c(0, 1), main="Q3 / chain length", xlab="chain length", ylab="Q3")';
+print SCRIPT "l_psi <- read.table(\"$l_psi_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'plot(l_psi$length, l_psi$q3, ylim=c(0, 1), main="Q3 / chain length", xlab="chain length", ylab="Q3")' . "\n";
 
 #
 my $l_prof_file = "$data_tmp.l_prof";
 write_data_file($l_prof_file, \@l_prof_data, qw(length q3 pH pE pL rH rE rL fH fE fL mH mE mL));
-say SCRIPT "l_prof <- read.table(\"$l_prof_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'plot(l_prof$length, l_prof$q3, ylim=c(0, 1), main="Q3 / chain length", xlab="chain length", ylab="Q3")';
+print SCRIPT "l_prof <- read.table(\"$l_prof_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'plot(l_prof$length, l_prof$q3, ylim=c(0, 1), main="Q3 / chain length", xlab="chain length", ylab="Q3")' . "\n";
 
 #
 my @ri_rep_data;
@@ -277,37 +277,37 @@ foreach my $i (0 .. 9) {
 my $ri_prof_file = "$data_tmp.ri_prof";
 write_data_file($ri_prof_file, \@ri_prof_data, qw(RI abs rel q3 pH pE pL rH rE rL fH fE fL mH mE mL));
 
-say SCRIPT "ri_rep <- read.table(\"$ri_rep_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'plot(ri_rep$rel, ri_rep$q3, type="o", ylim=c(0, 1), xlim=c(0, 1), main="Q3 for predictions above RI index", xlab="percentage of residues", ylab="Q3", col="green")';
-say SCRIPT 'text(ri_rep$rel, y=ri_rep$q3, labels=ri_rep$RI, pos=3, col="green")';#, offset=0.2, cex=0.5)';
+print SCRIPT "ri_rep <- read.table(\"$ri_rep_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'plot(ri_rep$rel, ri_rep$q3, type="o", ylim=c(0, 1), xlim=c(0, 1), main="Q3 for predictions above RI index", xlab="percentage of residues", ylab="Q3", col="green")' . "\n";
+print SCRIPT 'text(ri_rep$rel, y=ri_rep$q3, labels=ri_rep$RI, pos=3, col="green")' . "\n";
 
-say SCRIPT "ri_psi <- read.table(\"$ri_psi_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'points(ri_psi$rel, ri_psi$q3, type="o", col="orange")';
-say SCRIPT 'text(ri_psi$rel, y=ri_psi$q3, labels=ri_psi$RI, pos=3, col="orange")';#, offset=0.2, cex=0.5)';
+print SCRIPT "ri_psi <- read.table(\"$ri_psi_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'points(ri_psi$rel, ri_psi$q3, type="o", col="orange")' . "\n";
+print SCRIPT 'text(ri_psi$rel, y=ri_psi$q3, labels=ri_psi$RI, pos=3, col="orange")' . "\n";
 
-say SCRIPT "ri_prof <- read.table(\"$ri_prof_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'points(ri_prof$rel, ri_prof$q3, type="o", col="red")';
-say SCRIPT 'text(ri_prof$rel, y=ri_prof$q3, labels=ri_prof$RI, pos=3, col="red")';#, offset=0.2, cex=0.5)';
+print SCRIPT "ri_prof <- read.table(\"$ri_prof_file\", header=T, sep=\"\\t\")" . "\n";
+print SCRIPT 'points(ri_prof$rel, ri_prof$q3, type="o", col="red")' . "\n";
+print SCRIPT 'text(ri_prof$rel, y=ri_prof$q3, labels=ri_prof$RI, pos=3, col="red")' . "\n";
 
 # end
-say SCRIPT "dev.off()";
+print SCRIPT "dev.off()" . "\n";
 
 # single plots
-say SCRIPT 'tiff("./hist_50.tiff")';
-say SCRIPT 'hist(hist_rep$q3, xlab="Q3 [%]", ylab="Number of chains", xlim=c(0, 100), breaks=50, main=NULL, cex.lab=1.5)';
-say SCRIPT 'grid()';
-say SCRIPT 'box()';
-say SCRIPT 'dev.off()';
+print SCRIPT 'tiff("./hist_50.tiff")' . "\n";
+print SCRIPT 'hist(hist_rep$q3, xlab="Q3 [%]", ylab="Number of chains", xlim=c(0, 100), breaks=50, main=NULL, cex.lab=1.5)' . "\n";
+print SCRIPT 'grid()' . "\n";
+print SCRIPT 'box()' . "\n";
+print SCRIPT 'dev.off()' . "\n";
 
-say SCRIPT 'tiff("./ri.tiff")';
-say SCRIPT 'plot(ri_rep$rel, ri_rep$q3, type="o", ylim=c(0, 100), xlim=c(0, 100), xlab="% of residues", ylab="Q3 [%]", main=NULL, cex.lab=1.5)';
-say SCRIPT 'text(x=ri_rep$rel, y=ri_rep$q3, labels=ri_rep$RI, pos=3)';#, offset=0.2, cex=0.5)';
-say SCRIPT 'grid()';
-say SCRIPT 'box()';
-say SCRIPT 'dev.off()';
+print SCRIPT 'tiff("./ri.tiff")' . "\n";
+print SCRIPT 'plot(ri_rep$rel, ri_rep$q3, type="o", ylim=c(0, 100), xlim=c(0, 100), xlab="% of residues", ylab="Q3 [%]", main=NULL, cex.lab=1.5)' . "\n";
+print SCRIPT 'text(x=ri_rep$rel, y=ri_rep$q3, labels=ri_rep$RI, pos=3)' . "\n";
+print SCRIPT 'grid()' . "\n";
+print SCRIPT 'box()' . "\n";
+print SCRIPT 'dev.off()' . "\n";
 
 close SCRIPT;
-say `Rscript $script_file`;
+print `Rscript $script_file` . "\n";
 
-say `rm /tmp/plot_*`;
+print `rm /tmp/plot_*` . "\n";
 
