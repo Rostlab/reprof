@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 use strict;
-use feature qw(say);
 use Carp;
 use Getopt::Long;
 use Perlpred::Parser::fasta_multi;
@@ -45,7 +44,7 @@ foreach my $i (0 .. 9) {
 
 my $count = 0;
 while ($fasta_multi_parser->next) {
-    say ++$count;
+    print ++$count, "\n";
     #last if $count == 10;
     my ($id, $sequence) = $fasta_multi_parser->get_entry;
 
@@ -113,20 +112,20 @@ sub write_data_file {
     my ($data_file, $data, @header) = @_;
 
     open FH, "> $data_file" or croak "fh error\n";
-    say FH join "\t", @header;
+    print FH join "\t", @header, "\n";
     foreach my $p (@$data) {
-        say FH join "\t", @$p;
+        print FH join "\t", @$p, "\n";
     }
     close FH;
 }
 
 my $pid = $$;
-say "pid: $pid";
+print "pid: $pid", "\n";
 my $data_tmp = "/tmp/plot_$pid";
 
 my $script_file = "/tmp/plot_$pid.Rscript";
 open SCRIPT, "> $script_file" or confess "fh error\n";
-say SCRIPT "pdf(\"$out_file\")";
+print SCRIPT "pdf(\"$out_file\")", "\n";
 
 #
 my @measure_data;
@@ -135,8 +134,8 @@ push @measure_data, [$measure_psi->Qn, $measure_psi->precisions, $measure_psi->r
 push @measure_data, [$measure_prof->Qn, $measure_prof->precisions, $measure_prof->recalls, $measure_prof->fmeasures, $measure_prof->mccs];
 my $measure_file = "$data_tmp.measures";
 write_data_file($measure_file, \@measure_data, qw(q3 pH pE pL rH rE rL fH fE fL mH mE mL));
-say SCRIPT "measure <- read.table(\"$measure_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'barplot(as.matrix(measure), beside=TRUE, cex.names=0.7, main="Different Measures (per residue)", ylim=c(0, 1), legend.text=c("reprof", "psipred", "prof"))';
+print SCRIPT "measure <- read.table(\"$measure_file\", header=T, sep=\"\\t\")\n";
+print SCRIPT 'barplot(as.matrix(measure), beside=TRUE, cex.names=0.7, main="Different Measures (per residue)", ylim=c(0, 1), legend.text=c("reprof", "psipred", "prof"))', "\n";
 
 #
 my @avg_measure_data;
@@ -191,8 +190,8 @@ push @avg_measure_data, \@avg_measure_prof_data;
 
 my $avg_measure_file = "$data_tmp.avg_measures";
 write_data_file($avg_measure_file, \@avg_measure_data, qw(q3 pH pE pL rH rE rL fH fE fL mH mE mL));
-say SCRIPT "avg_measure <- read.table(\"$avg_measure_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'barplot(as.matrix(avg_measure), beside=TRUE, cex.names=0.7, main="Different Measures (per chain)", ylim=c(0, 1), legend.text=c("reprof", "psipred", "prof"))';
+print SCRIPT "avg_measure <- read.table(\"$avg_measure_file\", header=T, sep=\"\\t\")\n";
+print SCRIPT 'barplot(as.matrix(avg_measure), beside=TRUE, cex.names=0.7, main="Different Measures (per chain)", ylim=c(0, 1), legend.text=c("reprof", "psipred", "prof"))', "\n";
 
 #
 my @class_measure_data;
@@ -201,8 +200,8 @@ push @class_measure_data, [$class_measure_psi->Qn, $class_measure_psi->precision
 push @class_measure_data, [$class_measure_prof->Qn, $class_measure_prof->precisions, $class_measure_prof->recalls, $class_measure_prof->fmeasures, $class_measure_prof->mccs];
 my $class_measure_file = "$data_tmp.class_measures";
 write_data_file($class_measure_file, \@class_measure_data, qw(q3 pH pE pM pO rH rE rM rO fH fE fM fO mH mE mM mO));
-say SCRIPT "class_measure <- read.table(\"$class_measure_file\", header=T, sep=\"\\t\")";
-say SCRIPT 'barplot(as.matrix(class_measure), beside=TRUE, cex.names=0.7, main="Different Measures (structural class)", ylim=c(0, 1), legend.text=c("reprof", "psipred", "prof"))';
+print SCRIPT "class_measure <- read.table(\"$class_measure_file\", header=T, sep=\"\\t\")\n";
+print SCRIPT 'barplot(as.matrix(class_measure), beside=TRUE, cex.names=0.7, main="Different Measures (structural class)", ylim=c(0, 1), legend.text=c("reprof", "psipred", "prof"))', "\n";
 
 #
 my $hist_rep_file = "$data_tmp.hist_rep";

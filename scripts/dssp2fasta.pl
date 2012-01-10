@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 use strict;
-use feature qw(say);
 use Carp;
 use Getopt::Long;
 
@@ -48,7 +47,7 @@ warn "\n$missing files not found\n";
 foreach my $seq (keys %sequences) {
     if ($seq !~ m/X{$min,}/) {
         my $id = $sequences{$seq};
-        say ">$id";
-        say $seq;
+        print ">$id\n";
+        print $seq, "\n";
     }
 }

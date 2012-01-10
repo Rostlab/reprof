@@ -7,6 +7,7 @@ AC_CONFIG_FILES([
                  lib/Makefile
                  lib/RG/Makefile
                  lib/RG/Reprof/Makefile
+		 reprof.spec
                  scripts/Makefile
                  share/Makefile
                  ])

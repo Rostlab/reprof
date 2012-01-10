@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 use strict;
-use feature qw(say);
 use Carp;
 use Perlpred::Source::dssp;
 use Perlpred::Parser::dssp;
@@ -16,7 +15,7 @@ foreach my $fasta_file (@fasta_files) {
 
     open FASTA, "$fasta_file" or croak "Could not open $fasta_file\n";
 
-    say "$fasta_file -> $fasta_out";
+    print "$fasta_file -> $fasta_out\n";
     while (my $header = <FASTA>) {
         my $seq = <FASTA>;
         chomp $header;
@@ -29,8 +28,8 @@ foreach my $fasta_file (@fasta_files) {
         my $chain_count = scalar @$chains;
 
         if ($chain_count == 1) {
-            say OUT ">$id";
-            say OUT "$seq";
+            print OUT ">$id\n";
+            print OUT "$seq\n";
         }
     }
     close FASTA;

@@ -2,7 +2,6 @@ package RG::Reprof::blastPsiMat;
 
 use strict;
 use warnings;
-use feature qw(say);
 use Carp;
 use RG::Reprof::Converter qw(normalize);
 

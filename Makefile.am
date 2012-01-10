@@ -1,6 +1,7 @@
-SUBDIRS = examples scripts lib share
+dist_noinst_DATA = $(PACKAGE).spec $(PACKAGE).spec.in Build.PL.in
+dist_noinst_SCRIPTS = 
 
-dist_noinst_DATA = Build.PL.in
+SUBDIRS = examples scripts lib share
 
 all-local: build-stamp
 
@@ -8,7 +9,7 @@ clean-local:
 	if [ -e Build ]; then perl Build clean && rm -f Build build-stamp; fi
 
 distclean-local:
-	rm -rf _build MYMETA.yml
+	rm -rf _build MYMETA.yml $(PACKAGE).spec
 
 build-stamp: Build.PL
 	perl Build.PL installdirs=vendor && perl Build && touch build-stamp

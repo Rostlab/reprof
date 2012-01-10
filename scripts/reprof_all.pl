@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 use strict;
-use feature qw(say);
 use Carp;
 use Getopt::Long;
 use Perlpred::Parser::fasta_multi;
@@ -28,7 +27,7 @@ foreach my $param (@$params) {
     
     while ($fasta_multi_parser->next) {
         my ($id, $seq) = $fasta_multi_parser->get_entry;
-        say $id;
+        print $id, "\n";
 
         my $blastPsiMat_file = Perlpred::Source::blastPsiMat->predictprotein($id, $seq);
         my $out_file = "$out_dir/$id.reprof";
@@ -43,7 +42,7 @@ foreach my $param (@$params) {
         push @cmd, "--spec bb_model=$net_prefix/$bb/nntrain.model --spec bb_features=$net_prefix/$bb/train.setconvert";
         
         my $cmd_string = join " ", @cmd;
-        say `$cmd_string`;
+        print `$cmd_string`, "\n";
     }
 }
 

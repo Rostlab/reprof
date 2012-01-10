@@ -1,6 +1,5 @@
 package RG::Reprof::Converter;
 use strict;
-use feature qw(say);
 use Carp;
 
 require Exporter;

@@ -1,6 +1,5 @@
 package RG::Reprof::Reprof;
 use strict;
-use feature qw(say);
 use Carp;
 
 use base qw(ParentClass);

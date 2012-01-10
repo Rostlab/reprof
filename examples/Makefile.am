@@ -1,4 +1,4 @@
-pkgdocexamplesdir = ${datarootdir}/doc/${PACKAGE}/examples
+pkgdocexamplesdir = ${datadir}/doc/${PACKAGE}/examples
 dist_pkgdocexamples_DATA = $(srcdir)/example.* $(srcdir)/mutations*
 
 dist-hook:

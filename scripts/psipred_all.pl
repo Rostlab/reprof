@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 use strict;
-use feature qw(say);
 use Carp;
 use Getopt::Long;
 use File::Spec;
@@ -17,7 +16,7 @@ foreach my $f (@files) {
     $out =~ s/\.fasta$//;
 
     open FH, "> job.sh" or confess "fh error\n";
-    say FH join "\n", 
+    print FH join "\n", 
         "#!/bin/sh",
         "~rost_db/src/spreadBig_80.pl",
         "mkdir $tmp_dir",
@@ -25,5 +24,5 @@ foreach my $f (@files) {
         "$psipred_bin $fasta_file",
         "mv $out.* $out_dir";
     close FH;
-    say `qsub job.sh`;
+    print `qsub job.sh`, "\n";
 }

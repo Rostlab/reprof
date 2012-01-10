@@ -1,7 +1,6 @@
 package RG::Reprof::fasta;
 
 use strict;
-use feature qw(say);
 use Carp;
 use Data::Dumper;
 use RG::Reprof::Converter qw(aa aa_features);
