@@ -19,14 +19,20 @@ sub new {
     };
 
     bless $self, $class;
-    $self->parse($file);
-    return $self;
+    return $self->parse($file);
 }
 
 sub parse {
     my ($self, $file) = @_;
 
     open PSSM, $file or croak "Could not open $self->{file} ...\n";
+
+    my $to_check = <PSSM>;
+    $to_check = <PSSM>;
+    if ($to_check !~ m/^Last position-specific scoring matrix/) {
+        return undef;
+    }
+
     my @pssm_cont = grep /^\s*\d+/, (<PSSM>);
     chomp @pssm_cont;
     close PSSM;
@@ -47,8 +53,15 @@ sub parse {
         my @pc_norms = map {$_ / 100} @pcs;
         push @{$self->{percentage}}, \@pc_norms;
         push @{$self->{info}}, ($split[42]);
-        push @{$self->{weight}}, ($split[43]);
+        if ($split[43] eq "inf") {
+            push @{$self->{weight}}, 0;
+        }
+        else {
+            push @{$self->{weight}}, ($split[43]);
+        }
     }
+
+    return $self;
 }
 
 sub res {

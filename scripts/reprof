@@ -27,8 +27,7 @@ use RG::Reprof::blastPsiMat;
 if( system('pp_popcon_cnt', '-p', 'reprof') == -1 ){ warn("The Rost Lab recommends you install the pp-popularity-contest package that provides pp_popcon_cnt:\n\nsudo apt-get install pp-popularity-contest\n"); }
 
 # Parameters
-my $fasta_file;
-my $blastPsiMat_file;
+my $input_file;
 my $out_file;
 my $mutation_file;
 my %specific_models;
@@ -38,8 +37,7 @@ if (! -e $model_dir) {
 }
 
 GetOptions(
-    "fasta=s"       => \$fasta_file,
-    "blastPsiMat=s" => \$blastPsiMat_file,
+    "input=s"       => \$input_file,
     "out=s"         => \$out_file,
     "modeldir=s"    => \$model_dir,
     "mutations=s" => \$mutation_file,
@@ -112,15 +110,23 @@ my $acc_norm = {
 
 
 # Check if either blastPsiMat or fasta file is present
-if (defined $blastPsiMat_file && -e $blastPsiMat_file) {
-    # Load blastPsiMat file, and create fasta parser from sequence
-    $parsers{blastPsiMat} = RG::Reprof::blastPsiMat->new($blastPsiMat_file);
-    my @res = $parsers{blastPsiMat}->res();
-    $parsers{fasta} = RG::Reprof::fasta->new_sequence(join "", @res);
-}
-elsif (defined $fasta_file && -e $fasta_file) {
-    # Load fasta file
-    $parsers{fasta} = RG::Reprof::fasta->new($fasta_file);
+if (defined $input_file && -e $input_file) {
+    # Try to load blastPsiMat file, and create fasta parser from sequence
+    my $tmp_blastPsiMat_parser = RG::Reprof::blastPsiMat->new($input_file);
+    my $tmp_fasta_parser = RG::Reprof::fasta->new($input_file);
+    if (defined $tmp_blastPsiMat_parser) {
+        $parsers{blastPsiMat} = $tmp_blastPsiMat_parser;
+        my @res = $parsers{blastPsiMat}->res();
+        $parsers{fasta} = RG::Reprof::fasta->new_sequence(join "", @res);
+    }
+    # Else try to use input as fasta file
+    elsif (defined $tmp_fasta_parser) {
+        $parsers{fasta} = $tmp_fasta_parser;
+    }
+    else {
+        # Print usage
+        pod2usage(-verbose => 1);
+    }
 }
 else {
     # Print usage
@@ -157,14 +163,14 @@ foreach my $model_name (@model_names, @fasta_model_names) {
 # Create output filename
 if (! defined $out_file) {
     my ($vol, $dir);
-    ($vol, $dir, $out_file) = File::Spec->splitpath($fasta_file || $blastPsiMat_file);
+    ($vol, $dir, $out_file) = File::Spec->splitpath($input_file);
     $out_file =~ s/\.(fasta|blastPsiMat)$//;
     $out_file .= ".reprof";
 }
 elsif (-d $out_file) {
     my $out_dir = $out_file;
     my ($vol, $dir);
-    ($vol, $dir, $out_file) = File::Spec->splitpath($fasta_file || $blastPsiMat_file);
+    ($vol, $dir, $out_file) = File::Spec->splitpath($input_file);
     $out_file =~ s/\.(fasta|blastPsiMat)$//;
     $out_file .= ".reprof";
     $out_file = "$out_dir/$out_file";
@@ -546,23 +552,19 @@ Predict protein secondary structure and solvent accessibility.
 
 =head2 Output Format
 
-lkajan: Peter, please rewrite: The output fileformat is similar to the profRdb format except the "O" and "Ot" prefixed columns, the introducing comment and the added P10 column.
+The output format is self-explanatory, i.e. the colums of the output are described in the output file itself.
 
 =head1 OPTIONS
 
 =over
 
-=item B<-b, --blastPsiMat>=I<FILE>
+=item B<-i, --input>=I<FILE>
 
-Input BLAST PSSM matrix file.
-
-=item B<-f, --fasta>=I<FILE>
-
-Input (single) FASTA file.
+Input BLAST PSSM matrix file or input (single) FASTA file.
 
 =item B<-o, --out>=I<FILE>
 
-Either an output file or a directory. If not provided or a directory, the suffix of the input filename is replaced to create an output filename.
+Either an output file or a directory. If not provided or a directory, the suffix of the input filename (i.e. .fasta or .blastPsiMat) is replaced to create an output filename.
 
 =item B<--mutations>=I<[all|FILE]>
 
@@ -584,11 +586,15 @@ Peter Hoenigschmid L<hoenigschmid@rostlab.org>, Burkhard Rost
 
 =item Prediction from BLAST PSSM matrix for best results:
 
- reprof -b __docdir__/examples/example.Q -o /tmp/example.Q.reprof
+ reprof -i __docdir__/examples/example.Q -o /tmp/example.Q.reprof
 
 =item Prediction from FASTA file:
 
- reprof -f __docdir__/examples/example.fasta -o /tmp/example.fasta.reprof
+ reprof -i __docdir__/examples/example.fasta -o /tmp/example.fasta.reprof
+
+=item Prediction from BLAST PSSM matrix file using the mutation mode:
+
+ reprof -i __docdir__/examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations __docdir__/examples/mutations.txt
 
 =back
 

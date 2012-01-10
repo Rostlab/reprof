@@ -17,8 +17,7 @@ sub new {
     };
 
     bless $self, $class;
-    $self->parse($file);
-    return $self;
+    return $self->parse($file);
 }
 
 sub new_sequence {
@@ -39,10 +38,12 @@ sub new_sequence {
 sub parse {
     my ($self, $file) = @_;
 
+    my $is_valid = 0;
     open FASTA, $file or croak "Could not open $file\n";
     while (my $line = <FASTA>) {
         chomp $line;
         if ($line =~ m/^>/) {
+            $is_valid = 1;
             $self->{header} = substr $line, 1;
         }
         else {
@@ -53,6 +54,13 @@ sub parse {
     close FASTA;
 
     $self->{length} = scalar @{$self->{data}};
+
+    if ($is_valid) {
+        return $self;
+    }
+    else {
+        return undef;
+    }
 }
 
 sub header {
