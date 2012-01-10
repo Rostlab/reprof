@@ -109,7 +109,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 dist_bin_SCRIPTS = reprof
 man1_MANS = reprof.1
-docdir = ${datarootdir}/doc/${PACKAGE}
+docdir = ${datadir}/doc/${PACKAGE}
 all: all-am
 
 .SUFFIXES:
