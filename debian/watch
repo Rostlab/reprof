@@ -1,5 +1,0 @@
-# Compulsory line, this is a version 3 file
-version=3
-   
-# Uncommment to examine a FTP server
-ftp://rostlab.org/reprof-([0-9.]*)\.tar\.gz debian uupdate
