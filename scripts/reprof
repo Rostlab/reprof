@@ -7,7 +7,6 @@
 #-------------------------------------------------- 
 use strict;
 use warnings;
-use feature qw(say);
 use Carp;
 use Getopt::Long;
 use List::Util qw(sum min max);
@@ -259,7 +258,7 @@ if (defined $mutation_file) {
 foreach my $mutation (@mutations) {
     my ($aa_ori, $i, $aa_mut) = @$mutation;
 
-    say "### $aa_ori $i $aa_mut ###";
+    print "### $aa_ori $i $aa_mut ###\n";
 
     my @sequence_mut = @sequence;
     $sequence_mut[$i - 1] = $aa_mut;
@@ -319,7 +318,7 @@ sub write_output {
     my ($out_file, $sec_prediction, $acc_prediction) = @_;
     open OUT, ">", $out_file or croak "*** Outputfile could not be created.\n";
 
-    say OUT 
+    print OUT 
 "##General
 # No\t: Residue number (beginning with 1)
 # AA\t: Amino acid
@@ -336,9 +335,9 @@ sub write_output {
 # RI_A\t: Reliability index (0 to 9 (most reliable))
 # Pbe\t: Two states (b = buried, e = exposed)
 # Pbie\t: Three states (b = buried, i = intermediate, e = exposed)
-# ";
+# \n";
 
-    say OUT join "\t", qw(No AA PHEL RI_S pH pE pL PACC PREL P10  RI_A Pbe Pbie);
+    print OUT join "\t", qw(No AA PHEL RI_S pH pE pL PACC PREL P10  RI_A Pbe Pbie), "\n";
     foreach my $i (0 .. $chain_length - 1) {
         my $No = $i + 1;
         my $AA = ($parsers{fasta}->residue())[$i];
@@ -355,7 +354,7 @@ sub write_output {
         my $Pbe = acc_rel2two($PREL);
         my $Pbie = acc_rel2three($PREL);
 
-        say OUT join "\t", $No, $AA, $PHEL, $RI_S, $pH, $pE, $pL, $PACC, $PREL, $P10, $RI_A, $Pbe, $Pbie;
+        print OUT join "\t", $No, $AA, $PHEL, $RI_S, $pH, $pE, $pL, $PACC, $PREL, $P10, $RI_A, $Pbe, $Pbie, "\n";
     }
     close OUT;
 }
