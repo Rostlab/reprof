@@ -542,9 +542,11 @@ reprof - predict protein secondary structure and solvent accessibility
 
 =head1 SYNOPSIS
 
-reprof --blastPsiMat [query.blastPsiMat] [OPTIONS]
+reprof -i [query.blastPsiMat] [OPTIONS]
 
-reprof --fasta [query.fasta] [OPTIONS]
+reprof -i [query.fasta] [OPTIONS]
+
+reprof -i [query.blastPsiMat|query.fasta] --mutations [mutations.txt] [OPTIONS]
 
 =head1 DESCRIPTION
 
@@ -560,7 +562,7 @@ The output format is self-explanatory, i.e. the colums of the output are describ
 
 =item B<-i, --input>=I<FILE>
 
-Input BLAST PSSM matrix file or input (single) FASTA file.
+Input BLAST PSSM matrix file (from Blast -Q option) or input (single) FASTA file.
 
 =item B<-o, --out>=I<FILE>
 
@@ -568,7 +570,14 @@ Either an output file or a directory. If not provided or a directory, the suffix
 
 =item B<--mutations>=I<[all|FILE]>
 
-Either the keyword "all" to predict all possible mutations or a file containing mutations one per line such as "C12M" for C is mutated to M on position 12. This mutation code is also attached to the filename using "_". An additional file ending "_ORI" contains the prediction using no evolutionary information even if the blastPsiMat file was provided.
+Either the keyword "all" to predict all possible mutations or a file containing mutations one per line such as "C12M" for C is mutated to M on position 12:
+
+ C30Y
+ R31W
+ G48D
+
+This mutation code is also attached to the output filename using "_".
+An additional file ending "_ORI" contains the prediction using no evolutionary information even if a BLAST PSSM matrix was provided.
 
 =item B<--modeldir>=I<DIR>
 
@@ -595,6 +604,8 @@ Peter Hoenigschmid L<hoenigschmid@rostlab.org>, Burkhard Rost
 =item Prediction from BLAST PSSM matrix file using the mutation mode:
 
  reprof -i __docdir__/examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations __docdir__/examples/mutations.txt
+ # Result files for the above call are going to be:
+ # /tmp/mutations_example.Q.{reprof,reprof_F172P,reprof_M1Q,reprof_N34Y,reprof_ORI} - see B<--mutations> for a description of the extensions.
 
 =back
 
@@ -609,5 +620,11 @@ You should have received a copy of the GNU General Public License along with thi
 =head1 BUGS
 
 https://rostlab.org/bugzilla3/enter_bug.cgi?product=reprof
+
+=head1 SEE ALSO
+
+blast2(1)
+
+http://rostlab.org/
 
 =cut
