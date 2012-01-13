@@ -186,7 +186,10 @@ sub profile {
     my @profiles;
 
     foreach my $residue (@residues) {
-        carp "Invalid residue $residue\n" unless defined aa($residue);
+        if (! defined aa($residue)) {
+            warn "changing $residue to X";
+            $residue = 'X';
+        }
 
         my @tmp_profile = map {0} (1 .. 20);
         my $array_pos = aa_features($residue, "number");
