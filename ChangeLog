@@ -1,10 +1,11 @@
-reprof (1.0.1) UNRELEASED; urgency=low
+reprof (1.0.1) unstable; urgency=low
 
-  * ?
+  * Moved implementation into RG::Reprof module, script now serves as a
+    command line interface only.  Documented RG::Reprof module.
 
- -- Peter Hoenigschmid <hoenigschmid@rostlab.org>  Wed, 04 Jan 2012 17:04:27 +0100
- 
-reprof (1.0.0) stable; urgency=low
+ -- Laszlo Kajan <lkajan@rostlab.org>  Fri, 13 Jan 2012 16:39:29 +0100
+
+reprof (1.0.0) unstable; urgency=low
 
   * Initial version
 

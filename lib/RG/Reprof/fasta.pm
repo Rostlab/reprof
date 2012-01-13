@@ -10,9 +10,8 @@ sub new {
     my ($class, $file) = @_;
 
     my $self = {
-        data => [],
-        header => undef,
-        length => undef
+        data => [], # lkajan: this holds the residues in an array; length is unnecessary, should be dynamically returned based on the 'data' property
+        header => undef
     };
 
     bless $self, $class;
@@ -23,11 +22,10 @@ sub new_sequence {
     my ($class, $seq) = @_;
 
     chomp $seq;
-    my @split = split //, $seq;
+    my @split = split //o, $seq;
     my $self = {
         data => [@split],
-        header => undef,
-        length => scalar @split,
+        header => undef
     };
 
     bless $self, $class;
@@ -52,8 +50,6 @@ sub parse {
     }
     close FASTA;
 
-    $self->{length} = scalar @{$self->{data}};
-
     if ($is_valid) {
         return $self;
     }
@@ -70,14 +66,13 @@ sub header {
 sub residue {
     my ($self, $id) = @_;
 
-    my @residues = @{$self->{data}};
-    return @residues;
+    return [ @{$self->{data}} ]; # lkajan: why do we create a copy?: Peter implemented it this way originally.
 }
 
 sub position {
     my ($self, $id) = @_;
 
-    my @positions = (1 .. $self->{length});
+    my @positions = (1 .. $self->length());
 
     return @positions;
 }
@@ -85,8 +80,8 @@ sub position {
 sub relative_position {
     my ($self, $id) = @_;
 
-    my @positions = (1 .. $self->{length});
-    my $length = $self->{length};
+    my @positions = (1 .. $self->length());
+    my $length = $self->length();
     my @relative_positions = map {$_ / $length} @positions;
 
     return @relative_positions;
@@ -96,7 +91,7 @@ sub relative_position_reverse {
     my ($self, $id) = @_;
 
     my @positions = (1 .. scalar @{$self->{data}});
-    my $length = $self->{length};
+    my $length = $self->length();
     my @relative_positions = map {1 - $_ / $length} @positions;
 
     return @relative_positions;
@@ -105,7 +100,7 @@ sub relative_position_reverse {
 sub in_sequence_bit {
     my ($self, $id) = @_;
 
-    my $length = $self->{length};
+    my $length = $self->length();
     my @result = map {1} (1 .. $length);
 
     return @result;
@@ -114,15 +109,13 @@ sub in_sequence_bit {
 sub length {
     my ($self, $id) = @_;
 
-    my $length = $self->{length};
-
-    return map {$length} (1 .. $length);
+    return scalar( @{$self->{data}} );
 }
 
 sub distanceN {
     my ($self, $id) = @_;
 
-    my $length = $self->{length};
+    my $length = $self->length();
     my @distances;
     foreach my $pre (0 .. $length - 1) {
         my @current = (0, 0, 0, 0);
@@ -145,7 +138,7 @@ sub distanceN {
 sub distanceC {
     my ($self, $id) = @_;
 
-    my $length = $self->{length};
+    my $length = $self->length();
     my @distances;
     foreach my $pre (1 .. $length) {
         my $post = $length - $pre;
@@ -169,7 +162,7 @@ sub distanceC {
 sub length_4state {
     my ($self, $id) = @_;
 
-    my $length = $self->{length};
+    my $length = $self->length();
     my @result = (0, 0, 0, 0);
     foreach my $i (1 .. 4) {
         if ($length >= 2 ** ($i - 1) * 60) {
@@ -222,7 +215,7 @@ sub aa_composition {
         $composition[aa_features($residue, "number")]++;
     }
 
-    my $length = $self->{length};
+    my $length = $self->length();
     foreach my $item (@composition) {
         $item /= $length;
     }
