@@ -187,7 +187,7 @@ sub profile {
 
     foreach my $residue (@residues) {
         if (! defined aa($residue)) {
-            warn "changing $residue to X";
+            warn "changing $residue to X\n";
             $residue = 'X';
         }
 
