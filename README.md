@@ -29,14 +29,15 @@ sudo cp -a lib/. /etc/perl/
 
 ### reprof execution
 If we already have reprof installed in our computer these are the execution commands:
+
 Prediction from BLAST PSSM: (algorithm for comparing amino-acid sequences using position weighted matrix)
-       reprof -i examples/example.Q -o /tmp/example.Q.reprof
+ reprof -i examples/example.Q -o /tmp/example.Q.reprof
 
 Prediction from FASTA file: (text based file to represent amino acids using single letter codes)
-       reprof -i examples/example.fasta -o /tmp/example.fasta.reprof
+ reprof -i examples/example.fasta -o /tmp/example.fasta.reprof
 
 Prediction from BLAST PSSM matrix file using the mutation mode:
-       reprof -i examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations examples/mutations.txt
+ reprof -i examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations examples/mutations.txt
 
 ## HOWTO Run, Basics
 
