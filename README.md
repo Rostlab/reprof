@@ -84,4 +84,5 @@ This is optional. Only needed if the tool has many configuration options. If the
 
 
 Algorithm: https://www.rostlab.org/papers/1996_phd/paper.html
+
 Man page: http://manpages.ubuntu.com/manpages/vivid/man1/reprof.1.html
