@@ -20,11 +20,11 @@ Once the environment is ready the following commands install reprof in our syste
 ```
 cd reprof/
 autoreconf -vif
+./configure
+sudo make-ssl-cert
 cd lib/RG/
 make Reprof.pm
-make-ssl-cert
 cd ../../
-./configure
 make
 sudo make install
 sudo ./Build
