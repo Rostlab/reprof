@@ -49,13 +49,6 @@ Prediction from BLAST PSSM matrix file using the mutation mode:
 reprof -i examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations examples/mutations.txt
 ```
 
-## HOWTO Run, Basics
-
-* Input
-* Output
-* Expected Results
-* ...
-
 ## Method Description
 
 *Authors:*
@@ -64,24 +57,7 @@ reprof -i examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations exam
 * Laszlo Kajan <lkajan@rostlab.org>
 
 
-
-- Publications
-- Description (ML ? )
-- Training / Test Data
-- ...
-
-## Evaluation
-
-Perhaps:
-
-* Performance measures used (F1 ?, Accuracy ?, ROC Curve ?, ...)
-* Comparison with other tools
-* ...
-
-## (OPTIONAL) HOWTO Run, Extended
-
-This is optional. Only needed if the tool has many configuration options. If the conf options are also already well described in a man page, this fact can just be cited on the `HOWTO Run, Basics`
-
+## External links
 
 Algorithm: https://www.rostlab.org/papers/1996_phd/paper.html
 
