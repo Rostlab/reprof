@@ -61,3 +61,5 @@ reprof -i examples/example.Q -o /tmp/mutations_example.Q.reprof --mutations exam
 Algorithm: https://www.rostlab.org/papers/1996_phd/paper.html
 
 Man page: http://manpages.ubuntu.com/manpages/vivid/man1/reprof.1.html
+
+Elixir: https://bio.tools/tool/tum.de/reprof/1.0.1
