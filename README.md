@@ -1,4 +1,4 @@
-# Project Name
+# reprof
 
 Reprof is a protein secondary structure and accessibility predictor from the Rost Lab. Prediction is either done from protein sequence alone or from an alignment - the latter should be used for optimal performance. The language choosen was Perl.
 
